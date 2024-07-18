@@ -1,9 +1,10 @@
 from fastapi import FastAPI
-from app.routes import prenoms
+from app.routes import prenoms, data
 
 app = FastAPI()
 
 app.include_router(prenoms.router)
+app.include_router(data.router)
 
 @app.get("/")
 def read_root():
