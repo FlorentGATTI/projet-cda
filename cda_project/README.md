@@ -50,3 +50,12 @@ python scripts/load_data.py
 
 python scripts/exploration_initiale.pymermaid
 ```
+
+## Routes Back
+
+```py
+/ index
+
+/total_births/{year}
+
+/top_names/{year}
