@@ -114,3 +114,12 @@ Voici les routes disponibles dans l'API :
   ...
 ]
 ```
+
+## Routes Back
+
+```py
+/ index
+
+/total_births/{year}
+
+/top_names/{year}

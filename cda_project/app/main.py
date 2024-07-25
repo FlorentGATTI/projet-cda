@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from app.routes import prenoms, data
+from app.routes import prenoms, data
 
 app = FastAPI(docs_url="/docs", redoc_url="/redoc")
 
