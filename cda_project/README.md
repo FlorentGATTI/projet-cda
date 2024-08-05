@@ -62,6 +62,13 @@ Pour démarrer le serveur FastAPI :
 ```bash
 uvicorn app.main:app --reload
 ```
+Pour démarrer le front :
+
+```bash
+cd frontend
+npm install (si première fois)
+npm run serve
+```
 
 ## Documentation
 
