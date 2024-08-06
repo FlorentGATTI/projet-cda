@@ -1,6 +1,7 @@
 import os
 import pandas as pd
 from zipfile import ZipFile
+from pymongo import MongoClient
 
 def load_data():
     # Définir le chemin absolu pour le répertoire des données
@@ -26,3 +27,17 @@ def load_data():
 
     data = pd.concat(data_list, ignore_index=True)
     return data
+
+def insert_data_to_mongodb(data):
+    client = MongoClient("mongodb://localhost:27017")
+    db = client["cda"]
+    collection = db["prenoms"]
+
+    data_dict = data.to_dict("records")
+    collection.insert_many(data_dict)
+    client.close()
+
+if __name__ == "__main__":
+    data = load_data()
+    insert_data_to_mongodb(data)
+    print("Data has been successfully imported into MongoDB.")
