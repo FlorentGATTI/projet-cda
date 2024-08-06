@@ -2,7 +2,6 @@ from fastapi import APIRouter, HTTPException
 from typing import List
 from scripts.load_data import load_data
 from app.models.prenoms import NameData
-from app.models.data import TotalBirths
 
 data = load_data()
 

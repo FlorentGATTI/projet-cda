@@ -1,27 +1,27 @@
 import sys
 import os
+import logging
 from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware  
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import HTMLResponse
-from app.routes import prenoms, data
+from app.routes import prenoms, data, plot
+from app.middlewares.cors import add_cors_middleware
 
 # Ajouter le chemin du répertoire du projet au PATH
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
+# Configuration de la journalisation
+logging.basicConfig(level=logging.INFO)
+
 app = FastAPI(docs_url="/docs", redoc_url="/redoc")
 
-app.include_router(prenoms.router)
-app.include_router(data.router)
+# Ajouter les middlewares
+add_cors_middleware(app)
 
-# Configuration CORS
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],  # Vous pouvez restreindre les origines ici
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+# Inclure les routers avec le préfixe /api
+app.include_router(prenoms.router, prefix="/api")
+app.include_router(data.router, prefix="/api")
+app.include_router(plot.router, prefix="/api")
 
 # Montre les fichiers statiques du dossier 'static'
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
@@ -40,5 +40,3 @@ def read_root():
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
-
-
