@@ -6,10 +6,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import HTMLResponse
 from app.routes import prenoms, data, plot
 from app.middlewares.cors import add_cors_middleware
-from app.db import startup_db_client, shutdown_db_client, mongodb
-
-# Ajouter le chemin du répertoire du projet au PATH
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+from app.db import startup_db_client, shutdown_db_client, mongodb_client
 
 # Configuration de la journalisation
 logging.basicConfig(level=logging.INFO)
@@ -44,10 +41,12 @@ def read_root():
 async def on_startup():
     logging.info("Application startup: connecting to MongoDB")
     startup_db_client()
-    if mongodb:
-        logging.info("MongoDB connection established.")
-    else:
+    logging.info(f"mongodb variable after connection: {mongodb_client.db}")
+    if not mongodb_client.db:
         logging.error("Failed to establish MongoDB connection.")
+        raise RuntimeError("Failed to establish MongoDB connection.")
+    else:
+        logging.info("MongoDB connection successfully established.")
 
 @app.on_event("shutdown")
 async def on_shutdown():
