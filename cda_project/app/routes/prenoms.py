@@ -1,19 +1,19 @@
 from fastapi import APIRouter, HTTPException
 from typing import List
 from app.models.prenoms import NameData
-from app.db import mongodb
+from app.db import mongodb_client
 import logging
 
 router = APIRouter()
 
 @router.get("/top_names/{year}", response_model=List[NameData])
 def get_top_names(year: int):
-    if mongodb is None:
+    if mongodb_client.db is None:
         logging.error("Database connection not established")
         raise HTTPException(status_code=500, detail="Database connection not established")
     
     logging.info(f"Fetching top names for year: {year}")
-    top_names_by_year = list(mongodb["prenoms"].find({"Year": year}).sort("Count", -1).limit(1000))
+    top_names_by_year = list(mongodb_client.db["prenoms"].find({"Year": year}).sort("Count", -1).limit(1000))
     if not top_names_by_year:
         logging.warning(f"No data found for year: {year}")
         raise HTTPException(status_code=404, detail="Year not found")

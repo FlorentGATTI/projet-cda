@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException
 import pandas as pd
 from scripts.analysis import create_pivot_table, study_trends, measure_diversity, analyze_name_length
-from app.db import mongodb
+from app.db import mongodb_client
 import logging
 
 router = APIRouter()
@@ -9,12 +9,12 @@ router = APIRouter()
 @router.get("/plots/trends")
 async def get_trends(names: str):
     try:
-        if mongodb is None:
+        if mongodb_client.db is None:
             logging.error("Database connection not established")
             raise HTTPException(status_code=500, detail="Database connection not established")
 
         logging.info("Loading data from MongoDB for trends plot")
-        data = pd.DataFrame(list(mongodb["prenoms"].find({})))
+        data = pd.DataFrame(list(mongodb_client.db["prenoms"].find({})))
         logging.info(f"Loaded data with names: {names}")
         pivot_table = create_pivot_table(data)
         logging.info(f"Pivot table data: {pivot_table.head()}")
@@ -32,12 +32,12 @@ async def get_trends(names: str):
 @router.get("/plots/diversity")
 async def get_diversity():
     try:
-        if mongodb is None:
+        if mongodb_client.db is None:
             logging.error("Database connection not established")
             raise HTTPException(status_code=500, detail="Database connection not established")
 
         logging.info("Loading data from MongoDB for diversity plot")
-        data = pd.DataFrame(list(mongodb["prenoms"].find({})))
+        data = pd.DataFrame(list(mongodb_client.db["prenoms"].find({})))
         logging.info("Loaded data")
         pivot_table = create_pivot_table(data)
         logging.info(f"Pivot table data: {pivot_table.head()}")
@@ -54,12 +54,12 @@ async def get_diversity():
 @router.get("/plots/name_length")
 async def get_name_length():
     try:
-        if mongodb is None:
+        if mongodb_client.db is None:
             logging.error("Database connection not established")
             raise HTTPException(status_code=500, detail="Database connection not established")
 
         logging.info("Loading data from MongoDB for name length plot")
-        data = pd.DataFrame(list(mongodb["prenoms"].find({})))
+        data = pd.DataFrame(list(mongodb_client.db["prenoms"].find({})))
         logging.info("Loaded data")
         plot_image = analyze_name_length(data)
         if not plot_image:
