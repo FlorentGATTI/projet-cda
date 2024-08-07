@@ -30,7 +30,7 @@ export default {
   methods: {
     async fetchData() {
       try {
-        const response = await fetch(`http://127.0.0.1:8000/api/total_births/${this.selectedYear}`);
+        const response = await fetch(`http://localhost:8000/api/total_births/${this.selectedYear}`);
         const data = await response.json();
         this.totalBirths = data.total_births;
         console.log(this.totalBirths);
