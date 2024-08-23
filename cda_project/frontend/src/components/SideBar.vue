@@ -1,70 +1,79 @@
 <template>
-    <div class="sidebar-container">
-      <v-navigation-drawer app>
-        <v-list>
-          <v-list-item
-            v-for="(item, index) in items"
-            :key="index"
-            :to="item.route"
-            class="sidebar-item"
-            :class="{'sidebar-item-active': isActive(item.route)}"
-          >
-            <v-list-item-title>{{ item.title }}</v-list-item-title>
-          </v-list-item>
-        </v-list>
-      </v-navigation-drawer>
-    </div>
-  </template>
-  
-  <script>
-  export default {
-    name: 'SideBar',
-    data() {
-      return {
-        items: [
-          { title: 'Home', route: '/' },
-          { title: 'Name Analysis', route: '/name-analysis' },
-          { title: 'Global Statistics', route: '/global-stat' },
-          { title: 'Stats Diversity', route: '/stats-diversity' },
-          { title: 'Contact', route: '/contact' },
-        ],
-      }
-    },
-    methods: {
-      isActive(route) {
-        return this.$route.path === route;
+  <v-navigation-drawer app class="sidebar-container">
+    <v-list>
+      <v-list-item>
+        <v-list-item-title class="filter-title">Filtres généraux</v-list-item-title>
+      </v-list-item>
+      <v-list-item>
+        <v-text-field
+          label="Prénom"
+          v-model="filters.name"
+          placeholder="Entrez un prénom"
+        ></v-text-field>
+      </v-list-item>
+      <v-list-item>
+        <v-text-field
+          label="Sexe"
+          v-model="filters.sexe"
+          placeholder="Entrez un sexe"
+        ></v-text-field>
+      </v-list-item>
+      <v-list-item>
+        <v-select
+          label="Date"
+          v-model="filters.year"
+          :items="years"
+          placeholder="Sélectionnez une année"
+        ></v-select>
+      </v-list-item>
+      <v-list-item>
+        <v-btn @click="applyFilters">Appliquer les filtres</v-btn>
+      </v-list-item>
+    </v-list>
+  </v-navigation-drawer>
+</template>
+
+<script>
+export default {
+  data() {
+    return {
+      filters: {
+        name: '',
+        year: null,
       },
+      years: Array.from({ length: 2021 - 1880 + 1 }, (v, k) => 1880 + k),
+    };
+  },
+  methods: {
+    applyFilters() {
+      console.log('Filters applied:', this.filters);
     },
-  }
-  </script>
-  
-  <style scoped>
-  .v-list {
-    padding: 0;
-  }
-  .v-navigation-drawer {
-    background: linear-gradient(#cdc1b5, #E1D7CD);
-    border-right: 0px solid #0B4678;
-  }
-  
-  .v-list-item {
-    transition: color 0.3s;
-    background-color: transparent !important;
-  }
-  
-  .v-list-item .v-list-item-title {
-    color: #0B4678;
-    font-weight: bold;
-    font-size: 16px;
-  }
-  
-  .v-list-item:hover .v-list-item-title,
-  .v-list-item:focus .v-list-item-title {
-    color: #6D2E46;
-  }
-  
-  .sidebar-item-active .v-list-item-title {
-    color: #A26769;
-  }
-  </style>
-  
+  },
+};
+</script>
+
+<style scoped>
+.v-navigation-drawer {
+  background: #E1D7CD;
+  padding: 10px;
+}
+
+.filter-title {
+  font-weight: bold;
+  font-size: 1.2em;
+  margin-bottom: 10px;
+}
+
+.v-list-item {
+  margin-bottom: 15px;
+}
+
+.v-btn {
+  background-color: #1976D2;
+  color: white;
+}
+
+.v-btn:hover {
+  background-color: #135ba1;
+}
+</style>
