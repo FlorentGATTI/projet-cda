@@ -2,11 +2,11 @@
   <div class="plot-viewer">
     <div class="trend-section">
       <input class="name-input" v-model="names" placeholder="Entrez les prénoms séparés par des virgules" />
-      <button @click="fetchTrends">Générer un graphique de tendances</button>
+      <v-btn color="primary" @click="fetchTrends">Générer un graphique de tendances</v-btn>
     </div>
     <div class="buttons">
-      <button @click="fetchDiversity">Générer un graphique de diversité</button>
-      <button @click="fetchNameLength">Générer un tracé de longueur de nom</button>
+      <v-btn color="primary" @click="fetchDiversity">Générer un graphique de diversité</v-btn>
+      <v-btn color="primary" @click="fetchNameLength">Générer un tracé de longueur de nom</v-btn>
     </div>
     <div v-if="errorMessage" class="error-message">{{ errorMessage }}</div>
     <img :src="plotImage" alt="Generated Plot" v-if="plotImage && !errorMessage" />
@@ -90,7 +90,7 @@ export default {
 }
 
 .name-input {
-  width: 300px; /* Adjust the width as needed */
+  width: 300px;
   padding: 8px;
   font-size: 1em;
 }
@@ -101,17 +101,6 @@ export default {
 }
 
 button {
-  padding: 10px 20px;
   margin: 5px;
-  font-size: 1em;
-  background-color: #1976d2;
-  color: white;
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
-}
-
-button:hover {
-  background-color: #135ba1;
 }
 </style>
