@@ -78,3 +78,43 @@ def analyze_name_length(data):
     image_base64 = base64.b64encode(buffer.getvalue()).decode('utf-8')
     logging.info("Name length plot created")
     return image_base64
+
+
+def analyze_by_decade(data):
+    # Ajoute une colonne 'Decade' au DataFrame et crée un tableau pivot par décennie
+    data['Decade'] = (data['Year'] // 10) * 10
+    pivot_decade = data.pivot_table(values='Count', index='Decade', columns='Name', aggfunc='sum', fill_value=0)
+    return pivot_decade
+
+def analyze_geographic_diversity(data):
+       state_diversity = data.groupby(['State', 'Year'])['Name'].nunique()
+       plt.figure(figsize=(12, 8))
+       for state in state_diversity.index.get_level_values('State').unique():
+           plt.plot(state_diversity[state].index, state_diversity[state].values, label=state)
+       plt.title('Diversité des prénoms par état au fil des années')
+       plt.xlabel('Année')
+       plt.ylabel('Nombre de prénoms uniques')
+       plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
+       plt.tight_layout()
+       buffer = BytesIO()
+       plt.savefig(buffer, format='png')
+       plt.close()
+       buffer.seek(0)
+       image_base64 = base64.b64encode(buffer.getvalue()).decode('utf-8')
+       return image_base64
+
+def analyze_compound_names(data):
+       data['IsCompound'] = data['Name'].str.contains(' ')
+       compound_trend = data.groupby('Year')['IsCompound'].mean()
+       plt.figure(figsize=(10, 6))
+       plt.plot(compound_trend.index, compound_trend.values, label='Proportion de prénoms composés')
+       plt.title('Tendance des prénoms composés au fil des années')
+       plt.xlabel('Année')
+       plt.ylabel('Proportion de prénoms composés')
+       plt.legend()
+       buffer = BytesIO()
+       plt.savefig(buffer, format='png')
+       plt.close()
+       buffer.seek(0)
+       image_base64 = base64.b64encode(buffer.getvalue()).decode('utf-8')
+       return image_base64
