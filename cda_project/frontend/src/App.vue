@@ -8,6 +8,11 @@
       </select>
     </div>
     <p class="total-births">Total des naissances en {{ selectedYear }} : {{ totalBirths }}</p>
+    <div class="births-by-sex" v-if="birthsBySex">
+      <p>{{ birthsBySex.description }}</p>
+      <p>Garçons : {{ birthsBySex.M }}</p>
+      <p>Filles : {{ birthsBySex.F }}</p>
+    </div>
     <PlotViewer v-model:year="selectedYear" />
   </div>
 </template>
@@ -25,17 +30,27 @@ export default {
       years: Array.from({ length: 2021 - 1880 + 1 }, (v, k) => 1880 + k),
       selectedYear: 2001,
       totalBirths: 0,
+      birthsBySex: null,
     };
   },
   methods: {
     async fetchData() {
       try {
-        const response = await fetch(`http://localhost:8000/api/total_births/${this.selectedYear}`);
-        const data = await response.json();
-        this.totalBirths = data.total_births;
-        console.log(this.totalBirths);
+        const [totalBirthsResponse, birthsBySexResponse] = await Promise.all([
+          fetch(`http://localhost:8000/api/total_births/${this.selectedYear}`),
+          fetch(`http://localhost:8000/api/births_by_sex/${this.selectedYear}`)
+        ]);
+        
+        const totalBirthsData = await totalBirthsResponse.json();
+        const birthsBySexData = await birthsBySexResponse.json();
+        
+        this.totalBirths = totalBirthsData.total_births;
+        this.birthsBySex = birthsBySexData;
+        
+        console.log('Total births:', this.totalBirths);
+        console.log('Births by sex:', this.birthsBySex);
       } catch (error) {
-        console.error('Error fetching total births:', error);
+        console.error('Error fetching data:', error);
       }
     },
   },
@@ -63,7 +78,7 @@ h1 {
   margin-bottom: 20px;
 }
 
-.total-births {
+.total-births, .births-by-sex {
   font-size: 1.2em;
   margin-bottom: 20px;
 }
