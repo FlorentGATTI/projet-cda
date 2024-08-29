@@ -158,9 +158,9 @@ main {
   left: 0;
   width: 100%;
   z-index: 1000;
-  background-color: #2c3e50;
-  padding: 10px 30px; /* Padding légèrement augmenté pour plus de confort visuel */
-  box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.1); /* Ombre douce pour un effet flottant */
+  background-color: #A26769; /* Changement de la couleur de fond à #A26769 */
+  padding: 10px 30px;
+  box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 .sticky-navbar {
@@ -221,11 +221,12 @@ main {
   color: #ffffff;
   font-weight: 600;
   padding: 10px 20px;
+  background: linear-gradient(45deg, #A26769, #6d2e46); /* Dégradé avec les couleurs de la charte graphique */
 }
 
 .nav-btn:hover {
   transform: scale(1.1); /* Légère augmentation de taille au survol */
-  background-color: #1e5f74;
+  background-color: #6d2e46; /* Couleur plus foncée de la charte pour le survol */
   color: #ffffff;
 }
 
@@ -242,7 +243,7 @@ main {
   position: absolute;
   top: 75px; /* Descend légèrement le menu déroulant pour éviter qu'il soit trop proche de la barre de navigation */
   width: 100%;
-  background-color: #0b4678; /* Utilisation du bleu foncé de la charte graphique */
+  background-color: #A26769; /* Couleur de fond du menu burger */
   z-index: 99;
   flex-direction: column;
   padding: 20px 0px; /* Augmentation du padding pour aérer davantage le menu */
@@ -328,6 +329,7 @@ main {
   }
 }
 </style>
+
 
 
 
