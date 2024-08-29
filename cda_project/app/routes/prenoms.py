@@ -1,21 +1,28 @@
 from fastapi import APIRouter, HTTPException
 from typing import List
-from scripts.load_data import load_data
 from app.models.prenoms import NameData
-
-data = load_data()
+from app.db import mongodb_client
+import logging
 
 router = APIRouter()
 
 @router.get("/top_names/{year}", response_model=List[NameData])
 def get_top_names(year: int):
-    top_names_by_year = data[data['Year'] == year].nlargest(1000, 'Count')
-    if top_names_by_year.empty:
+    if mongodb_client.db is None:
+        logging.error("Database connection not established")
+        raise HTTPException(status_code=500, detail="Database connection not established")
+    
+    logging.info(f"Fetching top names for year: {year}")
+    top_names_by_year = list(mongodb_client.db["prenoms"].find({"Year": year}).sort("Count", -1).limit(1000))
+    if not top_names_by_year:
+        logging.warning(f"No data found for year: {year}")
         raise HTTPException(status_code=404, detail="Year not found")
 
-    filtered_names = top_names_by_year.dropna(subset=['Name', 'Count'])
-    if filtered_names.empty:
+    filtered_names = [name for name in top_names_by_year if name.get('Name') and name.get('Count')]
+    if not filtered_names:
+        logging.warning(f"No names found for year: {year}")
         raise HTTPException(status_code=404, detail="No names found for this year")
 
-    names_with_counts = [NameData(name=row['Name'], count=row['Count']) for index, row in filtered_names.iterrows()]
+    names_with_counts = [NameData(name=name['Name'], count=name['Count']) for name in filtered_names]
+    logging.info(f"Top names for year {year}: {[name.name for name in names_with_counts]}")
     return names_with_counts
