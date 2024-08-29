@@ -8,6 +8,11 @@
         </select>
       </div>
       <p class="total-births">Total des naissances en {{ selectedYear }} : {{ totalBirths }}</p>
+      <div class="births-by-sex" v-if="birthsBySex">
+      <p>{{ birthsBySex.description }}</p>
+      <p>Garçons : {{ birthsBySex.M }}</p>
+      <p>Filles : {{ birthsBySex.F }}</p>
+      </div>
       <PlotViewer v-model:year="selectedYear" />
     </div>
   </template>
