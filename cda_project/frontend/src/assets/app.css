@@ -1,0 +1,118 @@
+/* Styles globaux pour l'application */
+
+/* Couleur de fond de l'application */
+body, .v-application, main {
+    background-color: #E1D7CD;
+    color: #2c3e50; /* Couleur de texte par défaut */
+    font-family: 'Arial', sans-serif;
+}
+
+/* Styles pour les titres */
+h1, h2, h3, h4, h5, h6 {
+    color: #1976D2; /* Couleur primaire pour les titres */
+    font-family: 'Arial', sans-serif;
+}
+
+/* Styles pour les liens */
+a {
+    color: #1976D2; /* Couleur primaire */
+    text-decoration: none;
+}
+
+a:hover {
+    color: #6D2E46; /* Couleur d'accentuation */
+}
+
+/* Boutons standards */
+button, .v-btn {
+    background-color: #1976D2; /* Couleur primaire */
+    color: white;
+    font-family: 'Arial', sans-serif;
+    border: none;
+    border-radius: 5px;
+    padding: 10px 20px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+button:hover, .v-btn:hover {
+    background-color: #135ba1; /* Couleur primaire foncée pour l'effet hover */
+}
+
+/* Boutons secondaires */
+button.secondary, .v-btn.secondary {
+    background-color: #A26769; /* Couleur secondaire */
+}
+
+button.secondary:hover, .v-btn.secondary:hover {
+    background-color: #854d51; /* Couleur secondaire foncée pour l'effet hover */
+}
+
+/* Styles pour les champs de formulaire */
+input, select {
+    border: 1px solid #CDC1B5; /* Bordure beige clair */
+    padding: 8px;
+    border-radius: 5px;
+    width: 100%;
+    max-width: 300px;
+    font-size: 1em;
+    font-family: 'Arial', sans-serif;
+}
+
+/* Messages d'erreur */
+.error-message {
+    color: red;
+    font-weight: bold;
+}
+
+
+/* Navigation latérale (Sidebar) */
+.sidebar-container .v-navigation-drawer {
+    background: linear-gradient(#cdc1b5, #E1D7CD); /* Dégradé pour le fond de la sidebar */
+    border-right: 0px solid #0B4678;
+}
+
+.sidebar-item-active .v-list-item-title {
+    color: #A26769; /* Couleur secondaire pour l'élément actif */
+}
+
+/* Titres des items de la sidebar */
+.v-list-item-title {
+    color: #0B4678; /* Bleu foncé */
+    font-weight: bold;
+    font-size: 16px;
+}
+
+.v-list-item:hover .v-list-item-title,
+.v-list-item:focus .v-list-item-title {
+    color: #6D2E46; /* Accent */
+}
+
+/* Alignement et marges dans les sections */
+.section {
+    margin: 20px 0;
+    text-align: center;
+}
+
+.section h1 {
+    margin-bottom: 20px;
+    font-size: 2.5em;
+}
+
+/* Amélioration de la mise en page */
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+/* Footer (pied de page) */
+footer {
+    background-color: #0B4678;
+    color: white;
+    padding: 10px 0;
+    text-align: center;
+    font-size: 0.9em;
+}
+
+
