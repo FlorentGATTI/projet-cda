@@ -90,7 +90,7 @@ export default {
     const toggleNavbar = () => {
       navbarOpen.value = !navbarOpen.value;
     };
-    
+
     const startTouch = (event) => {
       startX.value = event.touches[0].clientX;
     };
@@ -101,16 +101,6 @@ export default {
         sidebarOpen.value = true;
       } else if (startX.value - endX > 100) {
         sidebarOpen.value = false;
-  },
-  methods: {
-    async fetchData() {
-      try {
-        const response = await fetch(`http://localhost:8000/api/total_births/${this.selectedYear}`);
-        const data = await response.json();
-        this.totalBirths = data.total_births;
-        console.log(this.totalBirths);
-      } catch (error) {
-        console.error('Error fetching total births:', error);
       }
     };
 
