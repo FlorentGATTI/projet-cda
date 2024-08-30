@@ -39,6 +39,7 @@ export default {
     return {
       filters: {
         name: '',
+        sexe: '',
         year: null,
       },
       years: Array.from({ length: 2021 - 1880 + 1 }, (v, k) => 1880 + k),
@@ -46,11 +47,13 @@ export default {
   },
   methods: {
     applyFilters() {
-      console.log('Filters applied:', this.filters);
+      console.log('Bouton "Appliquer les filtres" cliqué');
+      this.$emit('filters-applied', this.filters);
     },
   },
 };
 </script>
+
 
 <style scoped>
 .v-navigation-drawer {

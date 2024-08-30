@@ -153,7 +153,13 @@ export default {
   max-width: 100%;
 }
 
-.trend-section,
+.trend-section {
+  margin: 20px 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center; /* Centrer les éléments horizontalement */
+}
+
 .buttons {
   margin: 20px 0;
 }

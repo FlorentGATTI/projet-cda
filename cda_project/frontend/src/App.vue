@@ -3,21 +3,13 @@
     <!-- Navbar -->
     <v-app-bar app color="primary" dark class="elevation-2 artistic-navbar sticky-navbar">
       <v-toolbar-title class="title">
-        <img src="@/assets/logoCDA.png" alt="Logo" style="height: 50px;">
+        <img src="@/assets/logoCDA.png" alt="Logo" style="height: 50px" />
       </v-toolbar-title>
 
       <v-spacer></v-spacer>
 
       <!-- Menu burger pour mobile -->
-      <v-btn
-        icon
-        class="d-lg-none"
-        @click="toggleNavbar"
-        :color="navbarOpen ? 'secondary' : 'white'"
-        aria-label="Toggle navigation"
-        :aria-expanded="navbarOpen"
-        aria-controls="nav-dropdown"
-      >
+      <v-btn icon class="d-lg-none" @click="toggleNavbar" :color="navbarOpen ? 'secondary' : 'white'" aria-label="Toggle navigation" :aria-expanded="navbarOpen" aria-controls="nav-dropdown">
         <v-icon>mdi-menu</v-icon>
       </v-btn>
 
@@ -42,17 +34,16 @@
     <v-main :class="shouldShowSidebar ? 'with-sidebar' : 'without-sidebar'">
       <v-container fluid class="main-container">
         <!-- Sidebar (affichée uniquement pour certaines pages) -->
-        <SideBar v-if="shouldShowSidebar" class="sidebar-desktop" />
+        <SideBar v-if="shouldShowSidebar" class="sidebar-desktop" @filters-applied="updateFilters" />
 
         <!-- Page Content -->
         <v-container fluid class="content-container">
-          <router-view />
+          <router-view :filters="filters" />
         </v-container>
       </v-container>
     </v-main>
   </v-app>
 </template>
-
 
 <script>
 import { ref, computed, onMounted, onBeforeUnmount } from "vue";
@@ -71,6 +62,8 @@ export default {
     const sidebarOpen = ref(false);
     const startX = ref(0);
 
+    const filters = ref({ name: "", sexe: "", year: null });
+
     const windowWidth = ref(window.innerWidth);
     const breakpoint = 1280;
     const isDesktop = computed(() => windowWidth.value >= breakpoint);
@@ -84,7 +77,7 @@ export default {
     ];
 
     const shouldShowSidebar = computed(() => {
-      return route.path === "/name-analysis" || route.path === "/stats-diversity";
+      return route.path === "/stats-diversity";
     });
 
     const toggleNavbar = () => {
@@ -116,6 +109,10 @@ export default {
       }
     }, 100);
 
+    const updateFilters = (newFilters) => {
+      filters.value = newFilters;
+    };
+
     onMounted(() => {
       window.addEventListener("resize", handleResize);
     });
@@ -134,7 +131,9 @@ export default {
       startTouch,
       endTouch,
       navigateTo,
-      shouldShowSidebar, // Computed property to determine if the sidebar should be shown
+      shouldShowSidebar,
+      filters,
+      updateFilters,
     };
   },
 };
@@ -158,7 +157,7 @@ main {
   left: 0;
   width: 100%;
   z-index: 1000;
-  background-color: #A26769; /* Changement de la couleur de fond à #A26769 */
+  background-color: #a26769; /* Changement de la couleur de fond à #A26769 */
   padding: 10px 30px;
   box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.1);
 }
@@ -221,7 +220,7 @@ main {
   color: #ffffff;
   font-weight: 600;
   padding: 10px 20px;
-  background: linear-gradient(45deg, #A26769, #6d2e46); /* Dégradé avec les couleurs de la charte graphique */
+  background: linear-gradient(45deg, #a26769, #6d2e46); /* Dégradé avec les couleurs de la charte graphique */
 }
 
 .nav-btn:hover {
@@ -243,7 +242,7 @@ main {
   position: absolute;
   top: 75px; /* Descend légèrement le menu déroulant pour éviter qu'il soit trop proche de la barre de navigation */
   width: 100%;
-  background-color: #A26769; /* Couleur de fond du menu burger */
+  background-color: #a26769; /* Couleur de fond du menu burger */
   z-index: 99;
   flex-direction: column;
   padding: 20px 0px; /* Augmentation du padding pour aérer davantage le menu */
@@ -274,7 +273,6 @@ main {
 .nav-buttons-desktop .v-btn:last-child {
   margin-right: 25px; /* Ajustez cette valeur selon les besoins */
 }
-
 
 /* Boutons généraux */
 .v-btn {
@@ -329,8 +327,3 @@ main {
   }
 }
 </style>
-
-
-
-
-
