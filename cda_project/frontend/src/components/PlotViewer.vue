@@ -43,8 +43,18 @@
     <!-- Affichage des messages d'erreur -->
     <div v-if="errorMessage" class="error-message">{{ errorMessage }}</div>
 
+    <!-- Spinner de chargement -->
+    <v-progress-circular
+      v-if="loading"
+      :size="70"
+      :width="7"
+      indeterminate
+      color="primary"
+      class="spinner"
+    ></v-progress-circular>
+
     <!-- Conteneur pour afficher le graphique -->
-    <div class="plot-container">
+    <div class="plot-container" v-if="!loading">
       <img :src="plotImage" alt="Generated Plot" v-if="plotImage && !errorMessage" />
     </div>
   </div>
@@ -59,6 +69,7 @@ export default {
       availableNames: [], // Stocke la liste des prénoms disponibles
       plotImage: "", // Stocke l'image du graphique
       errorMessage: "", // Stocke les messages d'erreur
+      loading: false, // Indique si le graphique est en cours de génération
     };
   },
   created() {
@@ -81,10 +92,12 @@ export default {
     async fetchTrends() {
       this.errorMessage = "";
       this.plotImage = ""; // Efface l'image précédente
+      this.loading = true; // Démarre le spinner de chargement
 
       // Vérification que le premier prénom est sélectionné
       if (!this.selectedName1) {
         this.errorMessage = "Veuillez sélectionner au moins un prénom.";
+        this.loading = false;
         return;
       }
 
@@ -103,6 +116,8 @@ export default {
         }
       } catch (error) {
         this.errorMessage = error.message;
+      } finally {
+        this.loading = false; // Arrête le spinner de chargement
       }
     },
 
@@ -126,7 +141,8 @@ export default {
     // Méthode générique pour gérer les requêtes de graphique
     async handlePlotRequest(url) {
       this.errorMessage = "";
-      this.plotImage = ""; // Clear the previous image
+      this.plotImage = ""; // Efface l'image précédente
+      this.loading = true; // Démarre le spinner de chargement
       try {
         const response = await fetch(url);
         const data = await response.json();
@@ -137,6 +153,8 @@ export default {
         }
       } catch (error) {
         this.errorMessage = error.message;
+      } finally {
+        this.loading = false; // Arrête le spinner de chargement
       }
     },
   },
@@ -206,5 +224,9 @@ export default {
   max-width: 100%;
   height: auto;
   border-radius: 8px;
+}
+
+.spinner {
+  margin-top: 20px;
 }
 </style>
