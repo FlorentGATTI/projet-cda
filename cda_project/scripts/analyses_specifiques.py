@@ -24,11 +24,11 @@ def measure_diversity(pivot_table):
     fig.update_layout(title='Diversité des prénoms au fil des années', xaxis_title='Année', yaxis_title='Indice de Shannon')
     fig.show()
 
-# def analyze_by_decade(data):
-#     # Ajoute une colonne 'Decade' au DataFrame et crée un tableau pivot par décennie
-#     data['Decade'] = (data['Year'] // 10) * 10
-#     pivot_decade = data.pivot_table(values='Count', index='Decade', columns='Name', aggfunc='sum', fill_value=0)
-#     return pivot_decade
+def analyze_by_decade(data):
+    # Ajoute une colonne 'Decade' au DataFrame et crée un tableau pivot par décennie
+    data['Decade'] = (data['Year'] // 10) * 10
+    pivot_decade = data.pivot_table(values='Count', index='Decade', columns='Name', aggfunc='sum', fill_value=0)
+    return pivot_decade
 
 def analyze_name_length(data):
     # Ajoute une colonne 'NameLength' au DataFrame et analyse la tendance de la longueur des prénoms

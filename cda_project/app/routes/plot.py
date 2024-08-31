@@ -15,8 +15,7 @@ async def get_trends(name1: str = None, name2: str = None):
 
         logging.info("Loading data from MongoDB for trends plot")
         data = pd.DataFrame(list(mongodb_client.db["prenoms"].find({})))
-        logging.info(f"Data loaded. Sample: {data.head()}")  # Log a sample of the data
-
+        logging.info(f"Data loaded. Sample: {data.head()}")
         pivot_table = create_pivot_table(data)
         logging.info(f"Pivot table created with columns: {pivot_table.columns.tolist()}")
 
