@@ -1,5 +1,5 @@
 import pandas as pd
-import matplotlib.pyplot as plt
+import plotly.graph_objects as go
 from load_data import load_data
 from scipy.stats import entropy
 
@@ -11,26 +11,18 @@ def create_pivot_table(data):
 def study_trends(pivot_table, names):
     # Analyse et visualisation des tendances de prénoms spécifiques
     for name in names:
-        plt.figure(figsize=(10, 6))
-        plt.plot(pivot_table.index, pivot_table[name], label=name)
-        plt.title(f'Tendance du prénom {name}')
-        plt.xlabel('Année')
-        plt.ylabel('Nombre de naissances')
-        plt.legend()
-        plt.show()
+        fig = go.Figure()
+        fig.add_trace(go.Scatter(x=pivot_table.index, y=pivot_table[name], mode='lines', name=name))
+        fig.update_layout(title=f'Tendance du prénom {name}', xaxis_title='Année', yaxis_title='Nombre de naissances')
+        fig.show()
 
-        
-        
 def measure_diversity(pivot_table):
     # Calcul et visualisation de l'indice de diversité de Shannon pour chaque année
     diversity = pivot_table.apply(entropy, axis=1)
-    plt.figure(figsize=(10, 6))
-    plt.plot(diversity.index, diversity, label='Diversité des prénoms')
-    plt.title('Diversité des prénoms au fil des années')
-    plt.xlabel('Année')
-    plt.ylabel('Indice de Shannon')
-    plt.legend()
-    plt.show()
+    fig = go.Figure()
+    fig.add_trace(go.Scatter(x=diversity.index, y=diversity, mode='lines', name='Diversité des prénoms'))
+    fig.update_layout(title='Diversité des prénoms au fil des années', xaxis_title='Année', yaxis_title='Indice de Shannon')
+    fig.show()
 
 # def analyze_by_decade(data):
 #     # Ajoute une colonne 'Decade' au DataFrame et crée un tableau pivot par décennie
@@ -42,13 +34,10 @@ def analyze_name_length(data):
     # Ajoute une colonne 'NameLength' au DataFrame et analyse la tendance de la longueur des prénoms
     data['NameLength'] = data['Name'].apply(len)
     length_trend = data.groupby('Year')['NameLength'].mean()
-    plt.figure(figsize=(10, 6))
-    plt.plot(length_trend.index, length_trend, label='Longueur moyenne des prénoms')
-    plt.title('Tendance de la longueur des prénoms au fil des années')
-    plt.xlabel('Année')
-    plt.ylabel('Longueur moyenne des prénoms')
-    plt.legend()
-    plt.show()
+    fig = go.Figure()
+    fig.add_trace(go.Scatter(x=length_trend.index, y=length_trend, mode='lines', name='Longueur moyenne des prénoms'))
+    fig.update_layout(title='Tendance de la longueur des prénoms au fil des années', xaxis_title='Année', yaxis_title='Longueur moyenne des prénoms')
+    fig.show()
 
 def main():
     # Fonction principale pour exécuter les différentes analyses
