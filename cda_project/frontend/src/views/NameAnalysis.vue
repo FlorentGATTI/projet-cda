@@ -22,6 +22,8 @@
             </v-col>
             <v-col cols="12" md="6" v-if="totalBirths !== 0">
               <p>Total des naissances en {{ selectedYear }} : <span>{{ totalBirths }}</span></p>
+              <p>Naissances masculines : <span>{{ birthsBySex?.M || 0 }}</span></p>
+              <p>Naissances féminines : <span>{{ birthsBySex?.F || 0 }}</span></p>
             </v-col>
           </v-row>
         </v-container>
@@ -45,8 +47,9 @@ export default {
   data() {
     return {
       years: Array.from({ length: 2021 - 1880 + 1 }, (v, k) => 1880 + k),
-      selectedYear: null,  // Par défaut, aucune année n'est sélectionnée
+      selectedYear: null, 
       totalBirths: 0,
+      birthsBySex: { M: 0, F: 0 },
     };
   },
   watch: {
@@ -56,15 +59,16 @@ export default {
   },
   methods: {
     async fetchTotalBirths() {
-      if (!this.selectedYear) return;
-      try {
-        const response = await fetch(`http://127.0.0.1:8000/api/total_births/${this.selectedYear}`);
-        const data = await response.json();
-        this.totalBirths = data.total_births;
-      } catch (error) {
-        console.error('Erreur lors de la récupération du nombre total de naissances :', error);
-      }
-    },
+  if (!this.selectedYear) return;
+  try {
+    const response = await fetch(`http://127.0.0.1:8000/api/total_births/${this.selectedYear}`);
+    const data = await response.json();
+    this.totalBirths = data.total_births;
+    this.birthsBySex = data.births_by_sex || { M: 0, F: 0 };
+  } catch (error) {
+    console.error('Erreur lors de la récupération du nombre total de naissances :', error);
+  }
+}
   },
   mounted() {
     this.fetchTotalBirths();
