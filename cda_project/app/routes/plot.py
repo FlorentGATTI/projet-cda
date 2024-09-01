@@ -1,8 +1,10 @@
 from fastapi import APIRouter, HTTPException
 import pandas as pd
+import plotly.graph_objects as go  
 from scripts.analysis import create_pivot_table, study_trends, measure_diversity, analyze_name_length, analyze_by_decade
 from app.db import mongodb_client
 import logging
+import base64 
 
 router = APIRouter()
 
@@ -112,4 +114,26 @@ async def get_decade_analysis():
         return {"image": plot_image}
     except Exception as e:
         logging.error(f"Error generating decade analysis plot: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+    
+@router.get("/plots/yearly_births")
+async def get_yearly_births():
+    try:
+        if mongodb_client.db is None:
+            logging.error("Database connection not established")
+            raise HTTPException(status_code=500, detail="Database connection not established")
+
+        logging.info("Loading data from MongoDB for yearly births plot")
+        data = pd.DataFrame(list(mongodb_client.db["prenoms"].find({})))
+        logging.info(f"Loaded data: {data.head()}")
+        
+        yearly_births = data.groupby('Year')['Count'].sum()
+        fig = go.Figure()
+        fig.add_trace(go.Scatter(x=yearly_births.index, y=yearly_births.values, mode='lines', name='Nombre de naissances'))
+        fig.update_layout(title='Nombre de naissances par année', xaxis_title='Année', yaxis_title='Nombre de naissances')
+        
+        image_base64 = fig.to_image(format="png")
+        return {"image": base64.b64encode(image_base64).decode('utf-8')}
+    except Exception as e:
+        logging.error(f"Error generating yearly births plot: {e}")
         raise HTTPException(status_code=500, detail=str(e))
