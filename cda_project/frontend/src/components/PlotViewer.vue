@@ -32,14 +32,14 @@
     </div>
 
     <!-- Boutons pour d'autres analyses -->
-    <div class="buttons">
+    <!--  <div class="buttons">
       <button @click="fetchDiversity" class="secondary-button">Générer un graphique de diversité</button>
       <button @click="fetchNameLength" class="secondary-button">Générer un tracé de longueur de nom</button>
       <button @click="fetchDecadeAnalysis" class="secondary-button">Générer une analyse par décennie</button>
       <button @click="fetchGeographicDiversity" class="secondary-button">Générer une analyse de diversité géographique</button>
       <button @click="fetchCompoundNames" class="secondary-button">Générer une analyse des prénoms composés</button>
-    </div>
-
+    </div> -->
+   
     <!-- Affichage des messages d'erreur -->
     <div v-if="errorMessage" class="error-message">{{ errorMessage }}</div>
 
