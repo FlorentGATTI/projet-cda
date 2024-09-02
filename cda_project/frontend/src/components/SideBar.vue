@@ -57,14 +57,14 @@ export default {
 
 <style scoped>
 .v-navigation-drawer {
-  background: #E1D7CD;
+  background: linear-gradient(#E1D7CD, white);
   padding: 10px;
 }
 
 .filter-title {
   font-weight: bold;
   font-size: 1.2em;
-  margin-bottom: 10px;
+  margin-top: 10px;
 }
 
 .v-list-item {

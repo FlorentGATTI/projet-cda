@@ -2,7 +2,7 @@
   <div id="app">
     <h1>Analyse des Prénoms des Bébés aux États-Unis</h1>
 
-    <div class="main-content">
+    <div>
       <div class="year-births-section">
         <v-container>
           <v-row>
@@ -80,30 +80,17 @@ export default {
 #app {
   text-align: center;
   color: #0B4678; /* Indigo Dye */
-  margin-top: 40px;
   font-family: 'Roboto', sans-serif;
 }
 
 h1 {
   color: #1976D2; /* Blue */
-  font-size: 2.5em;
   margin-bottom: 20px;
-}
-
-.main-content {
-  background: #E1D7CD; /* Light Beige */
-  padding: 20px;
-  border-radius: 10px;
-  box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
-  max-width: 800px;
-  margin: auto;
 }
 
 .year-births-section {
   background: transparent; /* Retire le fond moche */
-  padding: 15px;
   border-radius: 8px;
-  margin-bottom: 20px;
   box-shadow: none !important; /* Supprime toute ombre appliquée */
   border: none !important; /* Supprime toute bordure */
 }
@@ -153,7 +140,6 @@ v-select {
 
 .plot-section {
   background: #CDC1B5; /* Beige */
-  padding: 20px;
   border-radius: 8px;
   max-width: 100%;
   overflow-x: auto; /* Assure que le graphique ne déborde pas horizontalement */

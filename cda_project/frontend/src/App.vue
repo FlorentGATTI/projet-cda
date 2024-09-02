@@ -1,7 +1,7 @@
 <template>
   <v-app @touchstart="startTouch" @touchend="endTouch">
     <!-- Navbar -->
-    <v-app-bar app color="primary" dark class="elevation-2 artistic-navbar sticky-navbar">
+    <v-app-bar app dark class="elevation-2 artistic-navbar sticky-navbar">
       <v-toolbar-title class="title">
         <img src="@/assets/logoCDA.png" alt="Logo" style="height: 50px" />
       </v-toolbar-title>
@@ -141,13 +141,23 @@ export default {
 
 <style scoped>
 /* Styles généraux */
+*{
+  color: #0B4678;
+}
 body,
 .v-application,
 main {
-  background-color: #f5f5f5; /* Couleur de fond légèrement plus claire */
   color: #2c3e50;
   font-family: "Arial", sans-serif;
   overflow-x: hidden;
+}
+
+v-container {
+  padding: 0;
+}
+
+.title img {
+  margin-top: 7px;
 }
 
 /* Barre de navigation */
@@ -157,8 +167,7 @@ main {
   left: 0;
   width: 100%;
   z-index: 1000;
-  background-color: #a26769; /* Changement de la couleur de fond à #A26769 */
-  padding: 10px 30px;
+  background-color: #E1D7CD !important; /* Changement de la couleur de fond à #A26769 */
   box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.1);
 }
 
@@ -189,7 +198,7 @@ main {
 .v-main {
   display: flex;
   flex-grow: 1;
-  margin-top: 64px;
+  margin-top: 40px;
   padding: 30px; /* Plus d'espace pour aérer le contenu */
   box-sizing: border-box;
   overflow: auto;
@@ -208,29 +217,24 @@ main {
 .content-container {
   flex-grow: 1;
   overflow-y: auto;
-  background-color: #ffffff; /* Couleur de fond blanche pour un look épuré */
-  border-radius: 8px; /* Coins arrondis pour un look moderne */
-  box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.05); /* Légère ombre pour un effet flottant */
-  padding: 20px;
 }
 
 /* Boutons de navigation */
 .nav-btn {
   transition: transform 0.2s, background-color 0.2s, color 0.2s;
-  color: #ffffff;
+  color: #a26769;
   font-weight: 600;
-  padding: 10px 20px;
-  background: linear-gradient(45deg, #a26769, #6d2e46); /* Dégradé avec les couleurs de la charte graphique */
+  padding: 5px 10px;
+  background: transparent; /* Dégradé avec les couleurs de la charte graphique */
 }
 
 .nav-btn:hover {
-  transform: scale(1.1); /* Légère augmentation de taille au survol */
   background-color: #6d2e46; /* Couleur plus foncée de la charte pour le survol */
   color: #ffffff;
 }
 
 .nav-btn-spacing {
-  margin-right: 15px; /* Plus d'espace entre les boutons */
+  margin-right: 5px; /* Plus d'espace entre les boutons */
 }
 
 .nav-btn-spacing:last-child {
@@ -276,9 +280,6 @@ main {
 
 /* Boutons généraux */
 .v-btn {
-  background: linear-gradient(45deg, #1976d2, #0b4678); /* Dégradé utilisant les couleurs de la charte */
-  box-shadow: 0px 4px 15px rgba(0, 0, 0, 0.15); /* Ombre douce */
-  color: #e1d7cd; /* Texte clair pour le contraste */
   font-weight: 600;
 }
 

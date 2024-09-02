@@ -1,6 +1,6 @@
 <template>
-    <v-container fluid>
-      <h2>Statistiques Globales des Prénoms</h2>
+    <div id="app">
+      <h1>Statistiques Globales des Prénoms</h1>
       
       <!-- Placeholder pour les graphiques interactifs -->
       <div class="graph-container">
@@ -13,7 +13,7 @@
           Graphique 2: Proportion des prénoms par année (à intégrer avec Plotly)
         </div>
       </div>
-    </v-container>
+    </div>
   </template>
   
   <script>
@@ -40,6 +40,9 @@
   </script>
   
   <style scoped>
+  h1 {
+    text-align: center;
+  }
   .graph-container {
     margin-top: 20px;
   }

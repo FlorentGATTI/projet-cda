@@ -1,5 +1,5 @@
 <template>
-    <v-container fluid class="about-container">
+    <div class="about-container">
       <!-- En-tête de la page -->
       <v-row class="text-center">
         <v-col>
@@ -16,7 +16,7 @@
           <h2>Notre Équipe</h2>
           <v-row>
             <v-col cols="12" md="4" v-for="member in teamMembers" :key="member.name">
-              <v-card class="team-card">
+              <v-card class="main-content">
                 <v-img :src="member.image" class="team-image" contain></v-img>
                 <v-card-title>{{ member.name }}</v-card-title>
                 <v-card-subtitle>{{ member.role }}</v-card-subtitle>
@@ -29,7 +29,7 @@
   
       <!-- Section de formulaire de contact -->
       <v-row class="contact-section">
-        <v-col cols="12" md="8" class="mx-auto">
+        <v-col cols="12" md="10" class="mx-auto">
           <h2>Contactez-Nous</h2>
           <v-form @submit.prevent="submitForm">
             <v-text-field
@@ -57,7 +57,7 @@
           </v-form>
         </v-col>
       </v-row>
-    </v-container>
+    </div>
   </template>
   
   <script>
@@ -101,28 +101,20 @@
   };
   </script>
   
-  <style scoped>
-  .about-container {
-    margin-top: 40px;
-    padding: 20px;
-    background-color: #f5f5f5;
-  }
-  
+  <style scoped>  
   .main-title {
     color: #1976D2;
-    font-size: 2.5em;
   }
   
   .subtitle {
     font-size: 1.2em;
     color: #666;
-    margin-bottom: 40px;
   }
-  
-  .team-section {
-    margin-bottom: 40px;
+
+  h2 {
+    margin-bottom: 5px;
   }
-  
+
   .team-card {
     text-align: center;
   }
@@ -138,5 +130,14 @@
   .contact-section {
     margin-top: 40px;
   }
+
+  .main-content {
+  background: #E1D7CD; /* Light Beige */
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+  margin: auto;
+  color: #0B4678;
+}
   </style>
   
