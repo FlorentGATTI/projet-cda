@@ -11,6 +11,8 @@
     "@mdi/font": "^7.4.47",
     "core-js": "^3.8.3",
     "leaflet": "^1.9.4",
+    "leaflet-choropleth": "^1.1.4",
+    "leaflet-providers": "^2.0.0",
     "plotly.js-dist": "^2.35.0",
     "vue": "^3.2.13",
     "vue-router": "^4.4.3",

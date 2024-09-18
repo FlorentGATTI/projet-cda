@@ -1,4 +1,5 @@
 import pandas as pd
+import matplotlib.pyplot as plt
 import plotly.graph_objects as go
 from scipy.stats import entropy
 from io import BytesIO
@@ -13,12 +14,27 @@ def create_pivot_table(data):
 
 def study_trends(pivot_table, names):
     logging.info(f"Creating trends plot for names: {names}")
+    plt.figure(figsize=(10, 6))
     valid_names = [name for name in names if name in pivot_table.columns]
     if not valid_names:
         logging.warning("No valid names found in pivot table for trends plot.")
         return None
     logging.info(f"Using data for names: {valid_names}")
     logging.info(pivot_table[valid_names].head())
+    for name in valid_names:
+        logging.info(f"Plotting data for {name}: {pivot_table[name].values}")
+        plt.plot(pivot_table.index, pivot_table[name], label=name)
+    plt.title('Tendances des prénoms')
+    plt.xlabel('Année')
+    plt.ylabel('Nombre de naissances')
+    plt.legend()
+    buffer = BytesIO()
+    plt.savefig(buffer, format='png')
+    plt.close()
+    buffer.seek(0)
+    image_base64 = base64.b64encode(buffer.getvalue()).decode('utf-8')
+    logging.info("Trends plot created")
+    return image_base64
     
     fig = go.Figure()
     for name in valid_names:
@@ -37,6 +53,19 @@ def measure_diversity(pivot_table):
         return None
     diversity = pivot_table.apply(entropy, axis=1)
     logging.info(f"Diversity data: {diversity.head()}")
+    plt.figure(figsize=(10, 6))
+    plt.plot(diversity.index, diversity, label='Diversité des prénoms')
+    plt.title('Diversité des prénoms au fil des années')
+    plt.xlabel('Année')
+    plt.ylabel('Indice de Shannon')
+    plt.legend()
+    buffer = BytesIO()
+    plt.savefig(buffer, format='png')
+    plt.close()
+    buffer.seek(0)
+    image_base64 = base64.b64encode(buffer.getvalue()).decode('utf-8')
+    logging.info("Diversity plot created")
+    return image_base64
     
     fig = go.Figure()
     fig.add_trace(go.Scatter(x=diversity.index, y=diversity, mode='lines', name='Diversité des prénoms'))
@@ -54,6 +83,20 @@ def analyze_name_length(data):
     data['NameLength'] = data['Name'].apply(len)
     length_trend = data.groupby('Year')['NameLength'].mean()
     logging.info(f"Name length data: {length_trend.head()}")
+    plt.figure(figsize=(10, 6))
+    logging.info(f"Plotting name length data: {length_trend.values}")
+    plt.plot(length_trend.index, length_trend, label='Longueur moyenne des prénoms')
+    plt.title('Tendance de la longueur des prénoms au fil des années')
+    plt.xlabel('Année')
+    plt.ylabel('Longueur moyenne des prénoms')
+    plt.legend()
+    buffer = BytesIO()
+    plt.savefig(buffer, format='png')
+    plt.close()
+    buffer.seek(0)
+    image_base64 = base64.b64encode(buffer.getvalue()).decode('utf-8')
+    logging.info("Name length plot created")
+    return image_base64
     
     fig = go.Figure()
     fig.add_trace(go.Scatter(x=length_trend.index, y=length_trend, mode='lines', name='Longueur moyenne des prénoms'))

@@ -15,7 +15,6 @@ const vuetify = createVuetify({
     themes: {
       light: {
         primary: '#1976D2',   // Blue
-        indigo: '#0B4678',   // Indigo Dye
         secondary: '#A26769', // Brownish-pink
         accent: '#6D2E46',    // Dark pink
         background: '#E1D7CD', // Light beige

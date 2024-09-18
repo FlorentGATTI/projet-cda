@@ -29,6 +29,7 @@ def get_top_names(year: int):
         raise HTTPException(status_code=404, detail="No names found for this year")
 
     names_with_counts = [NameData(name=name['Name'], count=name['Count']) for name in filtered_names]
+    logging.info(f"Top names for year {year}: {[name.name for name in names_with_counts]}")
     logging.info(f"Names with counts: {names_with_counts}")
     return names_with_counts
 

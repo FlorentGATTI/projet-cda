@@ -6,7 +6,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import HTMLResponse
 from app.middlewares.cors import add_cors_middleware
 from app.db import startup_db_client, shutdown_db_client, mongodb_client
-from app.routes import prenoms, data, plot, geographic_diversity  # Importer la nouvelle route
+from app.routes import prenoms, data, plot, geographic_diversity
 
 # Configuration de la journalisation
 logging.basicConfig(level=logging.INFO)
@@ -20,7 +20,7 @@ add_cors_middleware(app)
 app.include_router(prenoms.router, prefix="/api")
 app.include_router(data.router, prefix="/api")
 app.include_router(plot.router, prefix="/api")
-app.include_router(geographic_diversity.router, prefix="/api") 
+app.include_router(geographic_diversity.router, prefix="/api")
 
 # Utiliser un chemin absolu pour le répertoire statique
 static_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'static')

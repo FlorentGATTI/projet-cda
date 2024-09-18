@@ -1,4 +1,6 @@
 <template>
+    <h2>Stat</h2>
+</template>
   <v-container fluid>
     <h2>Statistiques Globales des Prénoms</h2>
     

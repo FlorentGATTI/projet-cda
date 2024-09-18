@@ -1,5 +1,10 @@
 import logging
 from pymongo import MongoClient
+from dotenv import load_dotenv
+import os
+
+# Charger les variables d'environnement du fichier .env
+load_dotenv()
 
 class MongoDBClient:
     _instance = None
@@ -14,7 +19,9 @@ class MongoDBClient:
     def connect(self):
         logging.info("Starting up MongoDB client...")
         try:
-            self.client = MongoClient("mongodb://localhost:27017")
+            # Utiliser l'URL MongoDB à partir des variables d'environnement
+            mongo_url = os.getenv("MONGODB_URL", "mongodb://localhost:27017")  # Valeur par défaut si la variable n'est pas définie
+            self.client = MongoClient(mongo_url)
             logging.info(f"MongoClient initialized: {self.client}")
             self.db = self.client["cda"]
             collections = self.db.list_collection_names()

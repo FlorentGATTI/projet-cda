@@ -13,7 +13,8 @@ def load_data():
     # Chargement des données
     all_data = []
     for file_name in os.listdir(data_dir):
-        if file_name.startswith("yob"):
+        # Ajout de la vérification isinstance(file_name, str)
+        if isinstance(file_name, str) and file_name.startswith("yob"):
             year = int(file_name[3:7])
             df = pd.read_csv(os.path.join(data_dir, file_name), names=["Name", "Sex", "Count"])
             df['Year'] = year

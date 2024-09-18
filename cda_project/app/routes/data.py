@@ -21,6 +21,8 @@ def get_total_births(year: int):
     if not births_by_year:
         logging.warning(f"No data found for year: {year}")
         raise HTTPException(status_code=404, detail="Year not found")
+    logging.info(f"Total births for year {year}: {births_by_year[0]['total_births']}")
+    return {"year": year, "total_births": births_by_year[0]["total_births"]}
     
     births_by_sex = list(mongodb_client.db["prenoms"].aggregate([
         {"$match": {"Year": year}},

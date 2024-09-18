@@ -1,5 +1,5 @@
 <template>
-  <v-app @touchstart="startTouch" @touchend="endTouch">
+  <v-app @touchend="endTouch">
     <!-- Navbar -->
     <v-app-bar app color="primary" dark class="elevation-2 artistic-navbar sticky-navbar">
       <v-toolbar-title class="title">
@@ -34,11 +34,10 @@
     <v-main :class="shouldShowSidebar ? 'with-sidebar' : 'without-sidebar'">
       <v-container fluid class="main-container">
         <!-- Sidebar (affichée uniquement pour certaines pages) -->
-        <SideBar v-if="shouldShowSidebar" class="sidebar-desktop" @filters-applied="updateFilters" />
-
+        <SideBar v-if="shouldShowSidebar" class="sidebar-desktop" @apply-filters="handleApplyFilters" :key="sidebarKey" ref="sidebarRef" />
         <!-- Page Content -->
         <v-container fluid class="content-container">
-          <router-view :filters="filters" />
+          <router-view :filters="filters" ref="statsDiversityRef" />
         </v-container>
       </v-container>
     </v-main>
@@ -49,7 +48,7 @@
 import { ref, computed, onMounted, onBeforeUnmount } from "vue";
 import { useRouter, useRoute } from "vue-router";
 import SideBar from "./components/SideBar.vue";
-import { debounce } from "lodash"; // Import lodash debounce function
+import { debounce } from "lodash";
 
 export default {
   name: "App",
@@ -61,8 +60,17 @@ export default {
     const navbarOpen = ref(false);
     const sidebarOpen = ref(false);
     const startX = ref(0);
+    const statsDiversityRef = ref(null);
+    const sidebarRef = ref(null);
+    const sidebarKey = ref(0);
 
-    const filters = ref({ name: "", sexe: "", year: null });
+    const filters = ref({
+      selectedRegionType: "state",
+      region: null,
+      year: null,
+      sex: null,
+      name: null,
+    });
 
     const windowWidth = ref(window.innerWidth);
     const breakpoint = 1280;
@@ -109,8 +117,19 @@ export default {
       }
     }, 100);
 
-    const updateFilters = (newFilters) => {
-      filters.value = newFilters;
+    const resetSidebarFilters = () => {
+      sidebarKey.value += 1;
+      if (sidebarRef.value) {
+        sidebarRef.value.resetFilters();
+      }
+    };
+
+    const handleApplyFilters = (appliedFilters) => {
+      filters.value = { ...filters.value, ...appliedFilters };
+      if (statsDiversityRef.value && statsDiversityRef.value.fetchAndDisplayData) {
+        statsDiversityRef.value.fetchAndDisplayData();
+      }
+      resetSidebarFilters();
     };
 
     onMounted(() => {
@@ -133,7 +152,10 @@ export default {
       navigateTo,
       shouldShowSidebar,
       filters,
-      updateFilters,
+      statsDiversityRef,
+      handleApplyFilters,
+      sidebarRef,
+      sidebarKey,
     };
   },
 };
