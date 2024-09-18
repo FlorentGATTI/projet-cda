@@ -5,7 +5,7 @@
 
 ## Description
 
-L'administration américaine de la sécurité sociale (SSA) a rendu publiques les données sur la fréquence des prénoms attribués aux bébés depuis 1880 jusqu'en 2018. Ce projet vise à analyser ces données pour identifier les tendances et les modèles dans l'attribution des prénoms. Une interface utilisateur est également développée pour présenter les résultats.
+L'administration américaine de la sécurité sociale (SSA) a rendu publiques les données sur la fréquence des prénoms attribués aux bébés depuis 1880 jusqu'en 2023. Ce projet vise à analyser ces données pour identifier les tendances et les modèles dans l'attribution des prénoms. Une interface utilisateur est également développée pour présenter les résultats.
 
 ## Installation
 
