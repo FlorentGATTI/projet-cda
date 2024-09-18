@@ -20,7 +20,9 @@ def load_names_data(data_dir):
     start_time = time.time()
     
     all_files = os.listdir(data_dir)
-    data_files = [f for f in all_files if f.startswith('yob') and f.endswith('.txt')]
+    # Ajout de la vérification isinstance(f, str)
+    data_files = [f for f in all_files if isinstance(f, str) and f.startswith('yob') and f.endswith('.txt')]
+    
     if not data_files:
         raise ValueError("No name data files found in the directory.")
     
