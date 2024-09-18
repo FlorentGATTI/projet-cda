@@ -1,8 +1,8 @@
-const { defineConfig } = require("@vue/cli-service");
+const { defineConfig } = require('@vue/cli-service')
 
 module.exports = defineConfig({
-  transpileDependencies: ["vuetify"],
-  outputDir: "../app/static",
+  transpileDependencies: ['vuetify'],
+  outputDir: '../app/static',
   devServer: {
     proxy: {
       '/api': {
@@ -20,5 +20,7 @@ module.exports = defineConfig({
         __VUE_PROD_HYDRATION_MISMATCH_DETAILS__: false
       })
     ]
+  }
+})
   }
 })
