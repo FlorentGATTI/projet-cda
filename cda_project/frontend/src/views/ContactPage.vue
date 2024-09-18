@@ -1,6 +1,6 @@
 <template>
     <h2>Contact</h2>
-</template>
+
     <v-container fluid class="about-container">
       <!-- En-tête de la page -->
       <v-row class="text-center">

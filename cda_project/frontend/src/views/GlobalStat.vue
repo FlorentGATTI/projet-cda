@@ -1,7 +1,7 @@
 <template>
     <h2>Stat</h2>
-</template>
-  <v-container fluid>
+
+    <v-container fluid>
     <h2>Statistiques Globales des Prénoms</h2>
     
     <!-- Year Selection -->
