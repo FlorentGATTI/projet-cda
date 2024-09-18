@@ -4,3 +4,11 @@ env/
 data/
 .vscode/
 picto.png
+# Fichiers package lock
+package-lock.json
+
+# Dossier node_modules
+node_modules/
+
+# Fichiers spécifiques de l'éditeur
+.vscode/
