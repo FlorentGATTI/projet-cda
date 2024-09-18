@@ -1,4 +1,3 @@
-
 # Projet d'Analyse des Prénoms des Bébés aux États-Unis
 
 ![Python](https://img.shields.io/badge/python-3.12-blue)

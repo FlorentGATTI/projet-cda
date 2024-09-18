@@ -123,7 +123,7 @@ def get_names_data(
         if sex:
             query["Sex"] = sex
         if name:
-            query["Name"] = {"$regex": f"^{name}", "$options": "i"}  # Recherche insensible à la casse commençant par le préfixe
+            query["Name"] = {"$regex": f"^{name}", "$options": "i"}  
         if count:
             query["Count"] = count 
         
