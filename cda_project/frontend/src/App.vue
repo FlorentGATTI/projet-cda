@@ -8,6 +8,11 @@
 
       <v-spacer></v-spacer>
 
+      <!-- Bouton de déconnexion pour desktop -->
+      <v-btn v-if="loggedIn" class="nav-btn" text @click="logout">
+        Déconnexion
+      </v-btn>
+
       <!-- Menu burger pour mobile -->
       <v-btn icon class="d-lg-none" @click="toggleNavbar" :color="navbarOpen ? 'secondary' : 'white'" aria-label="Toggle navigation" :aria-expanded="navbarOpen" aria-controls="nav-dropdown">
         <v-icon>mdi-menu</v-icon>
@@ -26,6 +31,10 @@
       <v-row v-if="navbarOpen && !isDesktop" id="nav-dropdown" class="nav-dropdown" align="center" justify="center">
         <v-btn v-for="link in navLinks" :key="link.path" class="nav-btn-dropdown" text @click="navigateTo(link.path)">
           {{ link.name }}
+        </v-btn>
+        <!-- Bouton de déconnexion pour mobile -->
+        <v-btn v-if="loggedIn" class="nav-btn-dropdown" text @click="logout">
+          Déconnexion
         </v-btn>
       </v-row>
     </transition>
@@ -113,6 +122,13 @@ export default {
       filters.value = newFilters;
     };
 
+    const loggedIn = computed(() => !!localStorage.getItem("user")); // Vérifie si l'utilisateur est connecté
+
+    const logout = () => {
+      localStorage.removeItem("user"); // Suppression de l'utilisateur du localStorage
+      router.push("/login"); // Redirection vers la page de connexion
+    };
+
     onMounted(() => {
       window.addEventListener("resize", handleResize);
     });
@@ -134,6 +150,8 @@ export default {
       shouldShowSidebar,
       filters,
       updateFilters,
+      loggedIn,
+      logout,
     };
   },
 };

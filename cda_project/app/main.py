@@ -7,6 +7,8 @@ from fastapi.responses import HTMLResponse
 from app.middlewares.cors import add_cors_middleware
 from app.db import startup_db_client, shutdown_db_client, mongodb_client
 from app.routes import prenoms, data, plot, geographic_diversity  # Importer la nouvelle route
+from app.models.user import User, get_password_hash
+from app.routes.auth import auth_router
 
 # Configuration de la journalisation
 logging.basicConfig(level=logging.INFO)
@@ -21,10 +23,20 @@ app.include_router(prenoms.router, prefix="/api")
 app.include_router(data.router, prefix="/api")
 app.include_router(plot.router, prefix="/api")
 app.include_router(geographic_diversity.router, prefix="/api") 
+# Inclure le router d'authentification avec le préfixe /api
+app.include_router(auth_router, prefix="/api")
 
 # Utiliser un chemin absolu pour le répertoire statique
 static_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'static')
 app.mount("/static", StaticFiles(directory=static_dir), name="static")
+
+def create_admin_user():
+    admin_user = mongodb_client.db["users"].find_one({"username": "admin"})
+    if not admin_user:
+        hashed_password = get_password_hash("admin")  # Utilise un mot de passe fort pour la production
+        admin_user = User(username="admin", password_hash=hashed_password, role="admin")
+        mongodb_client.db["users"].insert_one(admin_user.dict(by_alias=True))
+        logging.info("Admin user created")
 
 # Route pour servir le fichier index.html de l'application Vue.js
 @app.get("/", response_class=HTMLResponse)
@@ -43,11 +55,12 @@ async def on_startup():
     logging.info("Application startup: connecting to MongoDB")
     startup_db_client()
     logging.info(f"mongodb variable after connection: {mongodb_client.db}")
-    if not mongodb_client.db:
+    if mongodb_client.db is None:
         logging.error("Failed to establish MongoDB connection.")
         raise RuntimeError("Failed to establish MongoDB connection.")
     else:
         logging.info("MongoDB connection successfully established.")
+        create_admin_user()  # Appelle la fonction pour créer l'utilisateur admin
 
 @app.on_event("shutdown")
 async def on_shutdown():

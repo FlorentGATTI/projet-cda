@@ -50,7 +50,6 @@ button.secondary:hover, .v-btn.secondary:hover {
 
 /* Styles pour les champs de formulaire */
 input, select {
-    border: 1px solid #CDC1B5; /* Bordure beige clair */
     padding: 8px;
     border-radius: 5px;
     width: 100%;
