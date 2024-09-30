@@ -1,106 +1,182 @@
 <template>
   <div class="plot-viewer">
     <div class="trend-section">
-      <input class="name-input" v-model="names" placeholder="Entrez les prénoms séparés par des virgules" />
-      <v-btn color="primary" @click="fetchTrends">Générer un graphique de tendances</v-btn>
+      <v-select
+        v-model="selectedName1"
+        :items="availableNames"
+        label="Sélectionnez le premier prénom"
+        solo
+        hide-details
+        class="name-select"
+        placeholder="Recherchez ou sélectionnez un prénom"
+        searchable
+        v-if="availableNames.length"
+      ></v-select>
+
+      <v-select
+        v-model="selectedName2"
+        :items="availableNames"
+        label="Sélectionnez le deuxième prénom (facultatif)"
+        solo
+        hide-details
+        class="name-select"
+        placeholder="Recherchez ou sélectionnez un prénom"
+        searchable
+        v-if="availableNames.length"
+      ></v-select>
+      <v-btn color="primary" @click="fetchTrends" class="trend-button">Générer un graphique de tendances</v-btn>
     </div>
-    <div class="buttons">
-      <v-btn color="primary" @click="fetchDiversity">Générer un graphique de diversité</v-btn>
-      <v-btn color="primary" @click="fetchNameLength">Générer un tracé de longueur de nom</v-btn>
-    </div>
+    <!-- -->
+
+   
     <div v-if="errorMessage" class="error-message">{{ errorMessage }}</div>
-    <img :src="plotImage" alt="Generated Plot" v-if="plotImage && !errorMessage" />
+
+    <v-progress-circular
+      v-if="loading"
+      :size="70"
+      :width="7"
+      indeterminate
+      color="primary"
+      class="spinner"
+    ></v-progress-circular>
+
+    <div id="plotly-chart" ref="plotlyChart" class="plot-container"></div>
   </div>
 </template>
 
 <script>
+import Plotly from 'plotly.js-dist'
+
 export default {
   data() {
     return {
-      names: '',
-      plotImage: '',
-      errorMessage: ''
+      selectedName1: null,
+      selectedName2: null,
+      availableNames: [],
+      errorMessage: "",
+      loading: false,
     };
   },
+  created() {
+    this.fetchAvailableNames();
+  },
   methods: {
+    async fetchAvailableNames() {
+      try {
+        const response = await fetch('http://localhost:8000/api/names');
+        const data = await response.json();
+        this.availableNames = data;
+      } catch (error) {
+        console.error("Erreur lors de la récupération des prénoms disponibles:", error);
+        this.errorMessage = "Impossible de charger les prénoms disponibles.";
+      }
+    },
+
     async fetchTrends() {
-      this.errorMessage = '';
-      this.plotImage = ''; // Clear the previous image
+      await this.handlePlotRequest('trends');
+    },
+
+    // async fetchDiversity() {
+    //   await this.handlePlotRequest('diversity');
+    // },
+
+    // async fetchNameLength() {
+    //   await this.handlePlotRequest('name_length');
+    // },
+
+    // async fetchDecadeAnalysis() {
+    //   await this.handlePlotRequest('decade_analysis');
+    // },
+
+    async handlePlotRequest(plotType) {
+      this.errorMessage = "";
+      this.loading = true;
+
       try {
-        if (!this.names) {
-          throw new Error('Veuillez entrer au moins un prénom.');
+        let url = `http://localhost:8000/api/plots/${plotType}`;
+        if (plotType === 'trends') {
+          const queryParams = new URLSearchParams();
+          if (this.selectedName1) queryParams.append("name1", this.selectedName1);
+          if (this.selectedName2) queryParams.append("name2", this.selectedName2);
+          url += `?${queryParams.toString()}`;
         }
-        const response = await fetch(`http://localhost:8000/api/plots/trends?names=${encodeURIComponent(this.names)}`);
+
+        const response = await fetch(url);
         const data = await response.json();
-        console.log('Trends plot data received:', data);
+
         if (response.ok) {
-          this.plotImage = `data:image/png;base64,${data.image}`;
+          this.renderPlot(data.figure);
         } else {
-          throw new Error(data.detail || 'Erreur inconnue');
+          throw new Error(data.detail || "Erreur inconnue lors de la génération du graphique.");
         }
       } catch (error) {
         this.errorMessage = error.message;
+      } finally {
+        this.loading = false;
       }
     },
-    async fetchDiversity() {
-      this.errorMessage = '';
-      this.plotImage = ''; // Clear the previous image
-      try {
-        console.log('Fetching diversity');
-        const response = await fetch('http://localhost:8000/api/plots/diversity');
-        const data = await response.json();
-        console.log('Diversity plot data received:', data);
-        if (response.ok) {
-          this.plotImage = `data:image/png;base64,${data.image}`;
-        } else {
-          throw new Error(data.detail || 'Erreur inconnue');
-        }
-      } catch (error) {
-        this.errorMessage = error.message;
+
+    renderPlot(figureData) {
+      const plotlyChart = this.$refs.plotlyChart;
+      if (plotlyChart) {
+        Plotly.newPlot(plotlyChart, JSON.parse(figureData));
+      } else {
+        console.error('Plot container not found');
+        this.errorMessage = "Erreur lors de l'affichage du graphique.";
       }
     },
-    async fetchNameLength() {
-      this.errorMessage = '';
-      this.plotImage = ''; // Clear the previous image
-      try {
-        console.log('Fetching name length');
-        const response = await fetch('http://localhost:8000/api/plots/name_length');
-        const data = await response.json();
-        console.log('Name length plot data received:', data);
-        if (response.ok) {
-          this.plotImage = `data:image/png;base64,${data.image}`;
-        } else {
-          throw new Error(data.detail || 'Erreur inconnue');
-        }
-      } catch (error) {
-        this.errorMessage = error.message;
-      }
-    }
-  }
+  },
 };
 </script>
 
 <style scoped>
 .plot-viewer {
   text-align: center;
+  background: #cdc1b5;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  max-width: 100%;
 }
 
-.trend-section, .buttons {
+.trend-section {
+  margin: 20px 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.buttons {
   margin: 20px 0;
 }
 
-.name-input {
+.name-select {
   width: 300px;
-  padding: 8px;
-  font-size: 1em;
+  margin-bottom: 10px;
+}
+
+.trend-button {
+  margin-top: 10px;
 }
 
 .error-message {
-  color: red;
+  color: #a26769;
   margin-top: 20px;
+  font-weight: bold;
 }
 
-button {
+.secondary-button {
   margin: 5px;
+}
+
+.plot-container {
+  max-width: 100%;
+  /* height: 600px; */
+  display: flex;
+  justify-content: center;
+}
+
+.spinner {
+  margin-top: 20px;
 }
 </style>
