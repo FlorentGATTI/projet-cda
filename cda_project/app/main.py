@@ -6,7 +6,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import HTMLResponse
 from app.middlewares.cors import add_cors_middleware
 from app.db import startup_db_client, shutdown_db_client, mongodb_client
-from app.routes import prenoms, data, plot, geographic_diversity  # Importer la nouvelle route
+from app.routes import prenoms, data, plot, geographic_diversity
 from app.models.user import User, get_password_hash
 from app.routes.auth import auth_router
 
@@ -59,8 +59,14 @@ async def on_startup():
         logging.error("Failed to establish MongoDB connection.")
         raise RuntimeError("Failed to establish MongoDB connection.")
     else:
-        logging.info("MongoDB connection successfully established.")
-        create_admin_user()  # Appelle la fonction pour créer l'utilisateur admin
+        try:
+            # Vérifier que la connexion fonctionne en effectuant une opération simple
+            mongodb_client.db.command("ping")
+            logging.info("MongoDB connection successfully established and verified.")
+            create_admin_user()  # Appelle la fonction pour créer l'utilisateur admin
+        except Exception as e:
+            logging.error(f"MongoDB connection verification failed: {e}")
+            raise RuntimeError("Failed to verify MongoDB connection.")
 
 @app.on_event("shutdown")
 async def on_shutdown():

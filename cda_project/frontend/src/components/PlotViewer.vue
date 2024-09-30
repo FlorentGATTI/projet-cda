@@ -1,160 +1,122 @@
 <template>
   <div class="plot-viewer">
     <div class="trend-section">
-      <!-- Sélecteur pour le premier prénom -->
-      <v-select
-        v-model="selectedName1"
-        :items="availableNames"
-        label="Sélectionnez le premier prénom"
-        solo
-        hide-details
-        class="name-select"
-        placeholder="Recherchez ou sélectionnez un prénom"
-        searchable
-        v-if="availableNames.length"
-      ></v-select>
+      <v-select v-model="selectedName1" :items="availableNames" label="Sélectionnez le premier prénom" solo hide-details class="name-select" placeholder="Recherchez ou sélectionnez un prénom" searchable v-if="availableNames.length"></v-select>
 
-      <!-- Sélecteur pour le deuxième prénom -->
-      <v-select
-        v-model="selectedName2"
-        :items="availableNames"
-        label="Sélectionnez le deuxième prénom (facultatif)"
-        solo
-        hide-details
-        class="name-select"
-        placeholder="Recherchez ou sélectionnez un prénom"
-        searchable
-        v-if="availableNames.length"
-      ></v-select>
-
-      <!-- Bouton pour générer le graphique de tendances -->
+      <v-select v-model="selectedName2" :items="availableNames" label="Sélectionnez le deuxième prénom (facultatif)" solo hide-details class="name-select" placeholder="Recherchez ou sélectionnez un prénom" searchable v-if="availableNames.length"></v-select>
       <v-btn color="primary" @click="fetchTrends" class="trend-button">Générer un graphique de tendances</v-btn>
     </div>
 
-    <!-- Boutons pour d'autres analyses -->
-    <!--  <div class="buttons">
-      <button @click="fetchDiversity" class="secondary-button">Générer un graphique de diversité</button>
-      <button @click="fetchNameLength" class="secondary-button">Générer un tracé de longueur de nom</button>
-      <button @click="fetchDecadeAnalysis" class="secondary-button">Générer une analyse par décennie</button>
-      <button @click="fetchGeographicDiversity" class="secondary-button">Générer une analyse de diversité géographique</button>
-      <button @click="fetchCompoundNames" class="secondary-button">Générer une analyse des prénoms composés</button>
-    </div> -->
-   
-    <!-- Affichage des messages d'erreur -->
     <div v-if="errorMessage" class="error-message">{{ errorMessage }}</div>
 
-    <!-- Spinner de chargement -->
-    <v-progress-circular
-      v-if="loading"
-      :size="70"
-      :width="7"
-      indeterminate
-      color="primary"
-      class="spinner"
-    ></v-progress-circular>
+    <v-progress-circular v-if="loading" :size="70" :width="7" indeterminate color="primary" class="spinner"></v-progress-circular>
 
-    <!-- Conteneur pour afficher le graphique -->
-    <div class="plot-container" v-if="!loading">
-      <img :src="plotImage" alt="Generated Plot" v-if="plotImage && !errorMessage" />
-    </div>
+    <div id="plotly-chart" ref="plotlyChart" class="plot-container"></div>
   </div>
 </template>
 
 <script>
+import Plotly from "plotly.js-dist";
+
 export default {
   data() {
     return {
-      selectedName1: null, // Stocke le prénom sélectionné 1
-      selectedName2: null, // Stocke le prénom sélectionné 2
-      availableNames: [], // Stocke la liste des prénoms disponibles
-      plotImage: "", // Stocke l'image du graphique
-      errorMessage: "", // Stocke les messages d'erreur
-      loading: false, // Indique si le graphique est en cours de génération
+      selectedName1: null,
+      selectedName2: null,
+      availableNames: [],
+      errorMessage: "",
+      loading: false,
     };
   },
   created() {
-    this.fetchAvailableNames(); // Charger les noms disponibles au montage du composant
+    this.fetchAvailableNames();
   },
   methods: {
-    // Méthode pour récupérer la liste des prénoms disponibles depuis l'API
     async fetchAvailableNames() {
       try {
-        const response = await fetch('http://localhost:8000/api/names');
+        const response = await fetch("http://localhost:8000/api/names");
         const data = await response.json();
-        this.availableNames = data; // Assigne les prénoms disponibles à la variable
+        this.availableNames = data;
       } catch (error) {
         console.error("Erreur lors de la récupération des prénoms disponibles:", error);
         this.errorMessage = "Impossible de charger les prénoms disponibles.";
       }
     },
 
-    // Méthode pour générer le graphique de tendances
     async fetchTrends() {
-      this.errorMessage = "";
-      this.plotImage = ""; // Efface l'image précédente
-      this.loading = true; // Démarre le spinner de chargement
+      await this.handlePlotRequest("trends");
+    },
 
-      // Vérification que le premier prénom est sélectionné
-      if (!this.selectedName1) {
-        this.errorMessage = "Veuillez sélectionner au moins un prénom.";
-        this.loading = false;
-        return;
-      }
+    // async fetchDiversity() {
+    //   await this.handlePlotRequest('diversity');
+    // },
+
+    // async fetchNameLength() {
+    //   await this.handlePlotRequest('name_length');
+    // },
+
+    // async fetchDecadeAnalysis() {
+    //   await this.handlePlotRequest('decade_analysis');
+    // },
+
+    async handlePlotRequest(plotType) {
+      this.errorMessage = "";
+      this.loading = true;
 
       try {
-        const queryParams = new URLSearchParams();
-        if (this.selectedName1) queryParams.append("name1", this.selectedName1);
-        if (this.selectedName2) queryParams.append("name2", this.selectedName2);
-
-        const response = await fetch(`http://localhost:8000/api/plots/trends?${queryParams.toString()}`);
-        const data = await response.json();
-
-        if (response.ok) {
-          this.plotImage = `data:image/png;base64,${data.image}`;
-        } else {
-          throw new Error(data.detail || "Erreur inconnue lors de la génération du graphique.");
+        let url = `http://localhost:8000/api/plots/${plotType}`;
+        if (plotType === "trends") {
+          const queryParams = new URLSearchParams();
+          if (this.selectedName1) queryParams.append("name1", this.selectedName1);
+          if (this.selectedName2) queryParams.append("name2", this.selectedName2);
+          url += `?${queryParams.toString()}`;
         }
-      } catch (error) {
-        this.errorMessage = error.message;
-      } finally {
-        this.loading = false; // Arrête le spinner de chargement
-      }
-    },
 
-    // Autres méthodes pour générer les différents graphiques
-    async fetchDiversity() {
-      this.handlePlotRequest("http://localhost:8000/api/plots/diversity");
-    },
-    async fetchNameLength() {
-      this.handlePlotRequest("http://localhost:8000/api/plots/name_length");
-    },
-    async fetchDecadeAnalysis() {
-      this.handlePlotRequest("http://localhost:8000/api/plots/decade_analysis");
-    },
-    async fetchGeographicDiversity() {
-      this.handlePlotRequest("http://localhost:8000/api/plots/geographic_diversity");
-    },
-    async fetchCompoundNames() {
-      this.handlePlotRequest("http://localhost:8000/api/plots/compound_names");
-    },
-
-    // Méthode générique pour gérer les requêtes de graphique
-    async handlePlotRequest(url) {
-      this.errorMessage = "";
-      this.plotImage = ""; // Efface l'image précédente
-      this.loading = true; // Démarre le spinner de chargement
-      try {
         const response = await fetch(url);
         const data = await response.json();
+
         if (response.ok) {
-          this.plotImage = `data:image/png;base64,${data.image}`;
+          if (data.error) {
+            throw new Error(data.error);
+          }
+          if (data.figure) {
+            this.renderPlot(data.figure);
+          } else if (data.image) {
+            // Supposons que vous ayez une méthode pour afficher l'image
+            this.displayImage(data.image);
+          } else {
+            throw new Error("Réponse inattendue du serveur");
+          }
         } else {
           throw new Error(data.detail || "Erreur inconnue lors de la génération du graphique.");
         }
       } catch (error) {
         this.errorMessage = error.message;
       } finally {
-        this.loading = false; // Arrête le spinner de chargement
+        this.loading = false;
+      }
+    },
+
+    displayImage(imageBase64) {
+      const img = new Image();
+      img.src = `data:image/png;base64,${imageBase64}`;
+      const plotlyChart = this.$refs.plotlyChart;
+      if (plotlyChart) {
+        plotlyChart.innerHTML = "";
+        plotlyChart.appendChild(img);
+      } else {
+        console.error("Plot container not found");
+        this.errorMessage = "Erreur lors de l'affichage du graphique.";
+      }
+    },
+
+    renderPlot(figureData) {
+      const plotlyChart = this.$refs.plotlyChart;
+      if (plotlyChart) {
+        Plotly.newPlot(plotlyChart, JSON.parse(figureData));
+      } else {
+        console.error("Plot container not found");
+        this.errorMessage = "Erreur lors de l'affichage du graphique.";
       }
     },
   },
@@ -164,7 +126,7 @@ export default {
 <style scoped>
 .plot-viewer {
   text-align: center;
-  background: #cdc1b5; /* Beige */
+  background: #cdc1b5;
   padding: 20px;
   border-radius: 8px;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
@@ -175,7 +137,7 @@ export default {
   margin: 20px 0;
   display: flex;
   flex-direction: column;
-  align-items: center; /* Centrer les éléments horizontalement */
+  align-items: center;
 }
 
 .buttons {
@@ -188,42 +150,24 @@ export default {
 }
 
 .trend-button {
-  margin-top: 10px; /* Ajoute un peu d'espace en haut */
+  margin-top: 10px;
 }
 
 .error-message {
-  color: #a26769; /* Brun-rosé */
+  color: #a26769;
   margin-top: 20px;
   font-weight: bold;
 }
 
 .secondary-button {
-  background-color: #a26769; /* Brun-rosé */
-  color: white;
-  border: none;
-  padding: 10px 15px;
   margin: 5px;
-  cursor: pointer;
-  font-size: 0.9em;
-  border-radius: 5px;
-  transition: background-color 0.3s ease;
-}
-
-.secondary-button:hover {
-  background-color: #6d2e46; /* Dark Pink */
 }
 
 .plot-container {
   max-width: 100%;
-  height: auto;
+  /* height: 600px; */
   display: flex;
   justify-content: center;
-}
-
-.plot-container img {
-  max-width: 100%;
-  height: auto;
-  border-radius: 8px;
 }
 
 .spinner {

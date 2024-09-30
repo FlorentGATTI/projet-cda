@@ -17,9 +17,10 @@ async def get_trends(name1: str = None, name2: str = None):
 
         logging.info("Loading data from MongoDB for trends plot")
         data = pd.DataFrame(list(mongodb_client.db["prenoms"].find({})))
-        logging.info(f"Data loaded. Sample: {data.head()}")
+        logging.info(f"Loaded data with names: {name1}, {name2}")
+        
         pivot_table = create_pivot_table(data)
-        logging.info(f"Pivot table created with columns: {pivot_table.columns.tolist()}")
+        logging.info(f"Pivot table data: {pivot_table.head()}")
 
         names = []
         if name1:
@@ -43,15 +44,17 @@ async def get_trends(name1: str = None, name2: str = None):
         logging.info(f"Trends data prepared for plotting: {trends_data}")
 
         plot_image = study_trends(pivot_table, names)
+        logging.info(f"Type of plot_image: {type(plot_image)}")
+        logging.info(f"Content of plot_image: {plot_image[:100] if plot_image else None}")
         if not plot_image:
             logging.warning("Insufficient data to generate trends plot")
-            raise HTTPException(status_code=400, detail="Insufficient data to generate trends plot.")
+            return {"error": "Insufficient data to generate trends plot."}
 
         logging.info(f"Generated plot for trends: {plot_image[:100]}")
         return {"image": plot_image}
     except Exception as e:
         logging.error(f"Error generating trends plot: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        return {"error": str(e)}
 
 @router.get("/plots/diversity")
 async def get_diversity():
@@ -62,13 +65,16 @@ async def get_diversity():
 
         logging.info("Loading data from MongoDB for diversity plot")
         data = pd.DataFrame(list(mongodb_client.db["prenoms"].find({})))
-        logging.info(f"Loaded data: {data.head()}")
+        logging.info("Loaded data")
+        
         pivot_table = create_pivot_table(data)
-        logging.info(f"Pivot table created with columns: {pivot_table.columns.tolist()}")
+        logging.info(f"Pivot table data: {pivot_table.head()}")
+
         plot_image = measure_diversity(pivot_table)
         if not plot_image:
             logging.warning("Insufficient data to generate diversity plot")
-            raise HTTPException(status_code(400), detail="Insufficient data to generate diversity plot.")
+            raise HTTPException(status_code=400, detail="Insufficient data to generate diversity plot.")
+
         logging.info(f"Generated plot for diversity: {plot_image[:100]}")
         return {"image": plot_image}
     except Exception as e:
@@ -84,11 +90,13 @@ async def get_name_length():
 
         logging.info("Loading data from MongoDB for name length plot")
         data = pd.DataFrame(list(mongodb_client.db["prenoms"].find({})))
-        logging.info(f"Loaded data: {data.head()}")
+        logging.info("Loaded data")
+        
         plot_image = analyze_name_length(data)
         if not plot_image:
             logging.warning("Insufficient data to generate name length plot")
-            raise HTTPException(status_code(400), detail="Insufficient data to generate name length plot.")
+            raise HTTPException(status_code=400, detail="Insufficient data to generate name length plot.")
+
         logging.info(f"Generated plot for name length: {plot_image[:100]}")
         return {"image": plot_image}
     except Exception as e:
@@ -105,11 +113,13 @@ async def get_decade_analysis():
         logging.info("Loading data from MongoDB for decade analysis")
         data = pd.DataFrame(list(mongodb_client.db["prenoms"].find({})))
         logging.info(f"Loaded data: {data.head()}")
+        
         pivot_decade = analyze_by_decade(data)
         plot_image = measure_diversity(pivot_decade)
         if not plot_image:
             logging.warning("Insufficient data to generate decade analysis plot")
             raise HTTPException(status_code=400, detail="Insufficient data to generate decade analysis plot.")
+
         logging.info(f"Generated plot for decade analysis: {plot_image[:100]}")
         return {"image": plot_image}
     except Exception as e:

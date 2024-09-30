@@ -1,4 +1,6 @@
 <template>
+    <h2>Contact</h2>
+
     <v-container fluid class="about-container">
       <!-- En-tête de la page -->
       <v-row class="text-center">
@@ -139,4 +141,3 @@
     margin-top: 40px;
   }
   </style>
-  
