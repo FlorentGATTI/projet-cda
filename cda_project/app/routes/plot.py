@@ -1,91 +1,98 @@
-from fastapi import APIRouter, HTTPException
-import plotly.graph_objects as go
-from scripts.analysis import study_trends, measure_diversity, analyze_name_length, analyze_by_decade
+from fastapi import APIRouter, HTTPException, Query
+from fastapi.responses import JSONResponse
+from scripts.analysis import (
+    create_pivot_table,
+    study_trends,
+    measure_diversity,
+    analyze_name_length,
+    analyze_by_decade,
+    analyze_geographic_diversity,
+    analyze_compound_names
+)
 from app.db import get_cached_data, get_cached_pivot_table
 import logging
-import base64
+import json
 
 router = APIRouter()
 
-@router.get("/plots/trends")
-async def get_trends(name1: str = None, name2: str = None):
-    try:
-        data = get_cached_data()
-        if data is None:
-            raise HTTPException(status_code=500, detail="Database connection not established")
-
-        pivot_table = get_cached_pivot_table()
-        names = [name for name in [name1, name2] if name]
-
-        fig = study_trends(pivot_table, names)
-        if fig is None:
-            raise HTTPException(status_code=400, detail="Insufficient data to generate trends plot.")
-
-        return {"figure": fig.to_json()}
-    except Exception as e:
-        logging.error(f"Error generating trends plot: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
-
-@router.get("/plots/name_length")
-async def get_name_length():
-    try:
-        data = get_cached_data()
-        if data is None:
-            raise HTTPException(status_code=500, detail="Database connection not established")
-
-        fig = analyze_name_length(data)
-        if fig is None:
-            raise HTTPException(status_code=400, detail="Insufficient data to generate name length plot.")
-
-        return {"figure": fig.to_json()}
-    except Exception as e:
-        logging.error(f"Error generating name length plot: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
-
-@router.get("/plots/decade_analysis")
-async def get_decade_analysis():
-    try:
-        data = get_cached_data()
-        if data is None:
-            raise HTTPException(status_code=500, detail="Database connection not established")
-
-        fig = analyze_by_decade(data)
-        if fig is None:
-            raise HTTPException(status_code=400, detail="Insufficient data to generate decade analysis plot.")
-
-        return {"figure": fig.to_json()}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-@router.get("/plots/yearly_births")
-async def get_yearly_births():
-    try:
-        data = get_cached_data()
-        if data is None:
-            raise HTTPException(status_code=500, detail="Database connection not established")
-
-        yearly_births = data.groupby('Year')['Count'].sum()
-        fig = go.Figure()
-        fig.add_trace(go.Scatter(x=yearly_births.index, y=yearly_births.values, mode='lines', name='Nombre de naissances'))
-        fig.update_layout(title='Nombre de naissances par année', xaxis_title='Année', yaxis_title='Nombre de naissances')
-
-        image_base64 = fig.to_image(format="png")
-        return {"image": base64.b64encode(image_base64).decode('utf-8')}
-    except Exception as e:
-        logging.error(f"Error generating yearly births plot: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+def plot_to_json(fig):
+    return json.loads(fig.to_json())
 
 @router.get("/plots/diversity")
-async def get_diversity():
+def get_diversity_plot():
     try:
         pivot_table = get_cached_pivot_table()
-        if pivot_table is None:
-            raise HTTPException(status_code=500, detail="Database connection not established")
-
         fig = measure_diversity(pivot_table)
         if fig is None:
-            raise HTTPException(status_code=400, detail="Insufficient data to generate diversity plot.")
-
-        return {"figure": fig.to_json()}
+            raise HTTPException(status_code=404, detail="No data available for diversity plot")
+        return JSONResponse(content={"figure": plot_to_json(fig)})
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logging.error(f"Error in get_diversity_plot: {str(e)}")
+        raise HTTPException(status_code=500, detail="An error occurred while generating the diversity plot")
+
+@router.get("/plots/name_length")
+def get_name_length_plot():
+    try:
+        data = get_cached_data()
+        fig = analyze_name_length(data)
+        if fig is None:
+            raise HTTPException(status_code=404, detail="No data available for name length plot")
+        return JSONResponse(content={"figure": plot_to_json(fig)})
+    except Exception as e:
+        logging.error(f"Error in get_name_length_plot: {str(e)}")
+        raise HTTPException(status_code=500, detail="An error occurred while generating the name length plot")
+
+@router.get("/plots/decade_analysis")
+def get_decade_analysis_plot():
+    try:
+        data = get_cached_data()
+        fig = analyze_by_decade(data)
+        if fig is None:
+            raise HTTPException(status_code=404, detail="No data available for decade analysis plot")
+        return JSONResponse(content={"figure": plot_to_json(fig)})
+    except Exception as e:
+        logging.error(f"Error in get_decade_analysis_plot: {str(e)}")
+        raise HTTPException(status_code=500, detail="An error occurred while generating the decade analysis plot")
+
+@router.get("/plots/geographic_diversity")
+def get_geographic_diversity_plot():
+    try:
+        data = get_cached_data()
+        fig = analyze_geographic_diversity(data)
+        if fig is None:
+            raise HTTPException(status_code=404, detail="No data available for geographic diversity plot")
+        return JSONResponse(content={"figure": plot_to_json(fig)})
+    except Exception as e:
+        logging.error(f"Error in get_geographic_diversity_plot: {str(e)}")
+        raise HTTPException(status_code=500, detail="An error occurred while generating the geographic diversity plot")
+
+@router.get("/plots/compound_names")
+def get_compound_names_plot():
+    try:
+        data = get_cached_data()
+        fig = analyze_compound_names(data)
+        if fig is None:
+            raise HTTPException(status_code=404, detail="No data available for compound names plot")
+        json_fig = plot_to_json(fig)
+        if json_fig is None:
+            raise HTTPException(status_code=500, detail="Failed to convert figure to JSON")
+        return JSONResponse(content={"figure": json_fig})
+    except ValueError as ve:
+        logging.error(f"Error in get_compound_names_plot: {str(ve)}")
+        raise HTTPException(status_code=500, detail=str(ve))
+    except Exception as e:
+        logging.error(f"Error in get_compound_names_plot: {str(e)}")
+        raise HTTPException(status_code=500, detail="An error occurred while generating the compound names plot")
+
+@router.get("/plots/trends")
+def get_trends_plot(names: str = Query(..., description="Comma-separated list of names")):
+    try:
+        pivot_table = get_cached_pivot_table()
+        name_list = [name.strip() for name in names.split(',')]
+        fig = study_trends(pivot_table, name_list)
+        if fig is None:
+            raise HTTPException(status_code=404, detail="No data available for the specified names")
+        return JSONResponse(content={"figure": plot_to_json(fig)})
+    except Exception as e:
+        logging.error(f"Error in get_trends_plot: {str(e)}")
+        raise HTTPException(status_code=500, detail="An error occurred while generating the trends plot")

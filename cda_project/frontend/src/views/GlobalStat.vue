@@ -53,6 +53,8 @@
 <script>
 import Plotly from 'plotly.js-dist'
 
+const API_BASE_URL = 'http://localhost:8000';
+
 export default {
   name: 'GlobalStat',
   data() {
@@ -73,30 +75,38 @@ export default {
   methods: {
     async fetchTotalBirths() {
       if (!this.selectedYear) return;
+      this.loading = true;
+      this.errorMessage = "";
       try {
-        const response = await fetch(`http://127.0.0.1:8000/api/total_births/${this.selectedYear}`);
+        const response = await fetch(`${API_BASE_URL}/api/total_births/${this.selectedYear}`);
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
         const data = await response.json();
         this.totalBirths = data.total_births;
         this.birthsBySex = data.births_by_sex || { M: 0, F: 0 };
       } catch (error) {
         console.error('Erreur lors de la récupération du nombre total de naissances :', error);
+        this.errorMessage = "Erreur lors de la récupération des données de naissance.";
+      } finally {
+        this.loading = false;
       }
     },
 
     async fetchDiversity() {
-      await this.handlePlotRequest("http://localhost:8000/api/plots/diversity");
+      await this.handlePlotRequest(`${API_BASE_URL}/api/plots/diversity`);
     },
     async fetchNameLength() {
-      await this.handlePlotRequest("http://localhost:8000/api/plots/name_length");
+      await this.handlePlotRequest(`${API_BASE_URL}/api/plots/name_length`);
     },
     async fetchDecadeAnalysis() {
-      await this.handlePlotRequest("http://localhost:8000/api/plots/decade_analysis");
+      await this.handlePlotRequest(`${API_BASE_URL}/api/plots/decade_analysis`);
     },
     async fetchGeographicDiversity() {
-      await this.handlePlotRequest("http://localhost:8000/api/plots/geographic_diversity");
+      await this.handlePlotRequest(`${API_BASE_URL}/api/plots/geographic_diversity`);
     },
     async fetchCompoundNames() {
-      await this.handlePlotRequest("http://localhost:8000/api/plots/compound_names");
+      await this.handlePlotRequest(`${API_BASE_URL}/api/plots/compound_names`);
     },
 
     async handlePlotRequest(url) {
@@ -107,22 +117,20 @@ export default {
         if (this.selectedYear) queryParams.append("year", this.selectedYear);
 
         const response = await fetch(`${url}?${queryParams.toString()}`);
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
         const data = await response.json();
-        if (response.ok) {
-          if (data.image) {
-            // If the backend is still returning base64 image data
-            this.renderImagePlot(data.image);
-          } else if (data.figure) {
-            // If the backend is returning Plotly figure data
-            this.renderPlotlyPlot(data.figure);
-          } else {
-            throw new Error("Format de données non reconnu.");
-          }
+        if (data.image) {
+          this.renderImagePlot(data.image);
+        } else if (data.figure) {
+          this.renderPlotlyPlot(data.figure);
         } else {
-          throw new Error(data.detail || "Erreur inconnue lors de la génération du graphique.");
+          throw new Error("Format de données non reconnu.");
         }
       } catch (error) {
-        this.errorMessage = error.message;
+        console.error('Erreur lors de la génération du graphique:', error);
+        this.errorMessage = error.message || "Erreur inconnue lors de la génération du graphique.";
       } finally {
         this.loading = false;
       }
@@ -168,7 +176,13 @@ export default {
     renderPlotlyPlot(figureData) {
       const plotlyChart = this.$refs.plotlyChart;
       if (plotlyChart) {
-        Plotly.newPlot(plotlyChart, figureData);
+        const layout = {
+          ...figureData.layout,
+          width: plotlyChart.offsetWidth,
+          height: 500, // You can adjust this value
+          margin: { l: 50, r: 50, t: 50, b: 50 }
+        };
+        Plotly.newPlot(plotlyChart, figureData.data, layout, { responsive: true });
       } else {
         console.error('Plot container not found');
         this.errorMessage = "Erreur lors de l'affichage du graphique.";

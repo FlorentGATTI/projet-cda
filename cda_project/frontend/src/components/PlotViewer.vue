@@ -28,7 +28,6 @@
     </div>
     <!-- -->
 
-   
     <div v-if="errorMessage" class="error-message">{{ errorMessage }}</div>
 
     <v-progress-circular
@@ -76,18 +75,6 @@ export default {
       await this.handlePlotRequest('trends');
     },
 
-    // async fetchDiversity() {
-    //   await this.handlePlotRequest('diversity');
-    // },
-
-    // async fetchNameLength() {
-    //   await this.handlePlotRequest('name_length');
-    // },
-
-    // async fetchDecadeAnalysis() {
-    //   await this.handlePlotRequest('decade_analysis');
-    // },
-
     async handlePlotRequest(plotType) {
       this.errorMessage = "";
       this.loading = true;
@@ -105,6 +92,7 @@ export default {
         const data = await response.json();
 
         if (response.ok) {
+          console.log("API Response Data:", data); // Log the response data
           this.renderPlot(data.figure);
         } else {
           throw new Error(data.detail || "Erreur inconnue lors de la génération du graphique.");
@@ -119,7 +107,13 @@ export default {
     renderPlot(figureData) {
       const plotlyChart = this.$refs.plotlyChart;
       if (plotlyChart) {
-        Plotly.newPlot(plotlyChart, JSON.parse(figureData));
+        try {
+          const parsedData = JSON.parse(figureData); // Ensure the data is parsed correctly
+          Plotly.newPlot(plotlyChart, parsedData);
+        } catch (error) {
+          console.error('Error parsing figure data:', error);
+          this.errorMessage = "Erreur lors de l'affichage du graphique.";
+        }
       } else {
         console.error('Plot container not found');
         this.errorMessage = "Erreur lors de l'affichage du graphique.";

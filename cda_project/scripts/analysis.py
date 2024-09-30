@@ -63,10 +63,16 @@ def analyze_geographic_diversity(data):
     return base64.b64encode(image_base64).decode('utf-8')
 
 def analyze_compound_names(data):
+    if data.empty:
+        return None
     data['IsCompound'] = data['Name'].str.contains(' ')
-    compound_trend = data.groupby('Year')['IsCompound'].mean()
+    compound_trend = data.groupby('Year')['IsCompound'].mean().reset_index()
+    
     fig = go.Figure()
-    fig.add_trace(go.Scatter(x=compound_trend.index, y=compound_trend.values, mode='lines', name='Proportion of compound first names'))
-    fig.update_layout(title='Trends in compound names over the years', xaxis_title='Year', yaxis_title='Proportion of compound first names')
-    image_base64 = fig.to_image(format="png")
-    return base64.b64encode(image_base64).decode('utf-8')
+    fig.add_trace(go.Scatter(x=compound_trend['Year'], y=compound_trend['IsCompound'], mode='lines', name='Proportion of compound first names'))
+    fig.update_layout(
+        title='Trends in compound names over the years',
+        xaxis_title='Year',
+        yaxis_title='Proportion of compound first names'
+    )
+    return fig
