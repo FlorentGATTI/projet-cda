@@ -44,15 +44,17 @@ async def get_trends(name1: str = None, name2: str = None):
         logging.info(f"Trends data prepared for plotting: {trends_data}")
 
         plot_image = study_trends(pivot_table, names)
+        logging.info(f"Type of plot_image: {type(plot_image)}")
+        logging.info(f"Content of plot_image: {plot_image[:100] if plot_image else None}")
         if not plot_image:
             logging.warning("Insufficient data to generate trends plot")
-            raise HTTPException(status_code=400, detail="Insufficient data to generate trends plot.")
+            return {"error": "Insufficient data to generate trends plot."}
 
         logging.info(f"Generated plot for trends: {plot_image[:100]}")
         return {"image": plot_image}
     except Exception as e:
         logging.error(f"Error generating trends plot: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        return {"error": str(e)}
 
 @router.get("/plots/diversity")
 async def get_diversity():

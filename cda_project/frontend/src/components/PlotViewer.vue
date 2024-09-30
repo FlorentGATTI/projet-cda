@@ -1,51 +1,22 @@
 <template>
   <div class="plot-viewer">
     <div class="trend-section">
-      <v-select
-        v-model="selectedName1"
-        :items="availableNames"
-        label="Sélectionnez le premier prénom"
-        solo
-        hide-details
-        class="name-select"
-        placeholder="Recherchez ou sélectionnez un prénom"
-        searchable
-        v-if="availableNames.length"
-      ></v-select>
+      <v-select v-model="selectedName1" :items="availableNames" label="Sélectionnez le premier prénom" solo hide-details class="name-select" placeholder="Recherchez ou sélectionnez un prénom" searchable v-if="availableNames.length"></v-select>
 
-      <v-select
-        v-model="selectedName2"
-        :items="availableNames"
-        label="Sélectionnez le deuxième prénom (facultatif)"
-        solo
-        hide-details
-        class="name-select"
-        placeholder="Recherchez ou sélectionnez un prénom"
-        searchable
-        v-if="availableNames.length"
-      ></v-select>
+      <v-select v-model="selectedName2" :items="availableNames" label="Sélectionnez le deuxième prénom (facultatif)" solo hide-details class="name-select" placeholder="Recherchez ou sélectionnez un prénom" searchable v-if="availableNames.length"></v-select>
       <v-btn color="primary" @click="fetchTrends" class="trend-button">Générer un graphique de tendances</v-btn>
     </div>
-    <!-- -->
 
-   
     <div v-if="errorMessage" class="error-message">{{ errorMessage }}</div>
 
-    <v-progress-circular
-      v-if="loading"
-      :size="70"
-      :width="7"
-      indeterminate
-      color="primary"
-      class="spinner"
-    ></v-progress-circular>
+    <v-progress-circular v-if="loading" :size="70" :width="7" indeterminate color="primary" class="spinner"></v-progress-circular>
 
     <div id="plotly-chart" ref="plotlyChart" class="plot-container"></div>
   </div>
 </template>
 
 <script>
-import Plotly from 'plotly.js-dist'
+import Plotly from "plotly.js-dist";
 
 export default {
   data() {
@@ -63,7 +34,7 @@ export default {
   methods: {
     async fetchAvailableNames() {
       try {
-        const response = await fetch('http://localhost:8000/api/names');
+        const response = await fetch("http://localhost:8000/api/names");
         const data = await response.json();
         this.availableNames = data;
       } catch (error) {
@@ -73,7 +44,7 @@ export default {
     },
 
     async fetchTrends() {
-      await this.handlePlotRequest('trends');
+      await this.handlePlotRequest("trends");
     },
 
     // async fetchDiversity() {
@@ -94,7 +65,7 @@ export default {
 
       try {
         let url = `http://localhost:8000/api/plots/${plotType}`;
-        if (plotType === 'trends') {
+        if (plotType === "trends") {
           const queryParams = new URLSearchParams();
           if (this.selectedName1) queryParams.append("name1", this.selectedName1);
           if (this.selectedName2) queryParams.append("name2", this.selectedName2);
@@ -105,7 +76,17 @@ export default {
         const data = await response.json();
 
         if (response.ok) {
-          this.renderPlot(data.figure);
+          if (data.error) {
+            throw new Error(data.error);
+          }
+          if (data.figure) {
+            this.renderPlot(data.figure);
+          } else if (data.image) {
+            // Supposons que vous ayez une méthode pour afficher l'image
+            this.displayImage(data.image);
+          } else {
+            throw new Error("Réponse inattendue du serveur");
+          }
         } else {
           throw new Error(data.detail || "Erreur inconnue lors de la génération du graphique.");
         }
@@ -116,12 +97,25 @@ export default {
       }
     },
 
+    displayImage(imageBase64) {
+      const img = new Image();
+      img.src = `data:image/png;base64,${imageBase64}`;
+      const plotlyChart = this.$refs.plotlyChart;
+      if (plotlyChart) {
+        plotlyChart.innerHTML = "";
+        plotlyChart.appendChild(img);
+      } else {
+        console.error("Plot container not found");
+        this.errorMessage = "Erreur lors de l'affichage du graphique.";
+      }
+    },
+
     renderPlot(figureData) {
       const plotlyChart = this.$refs.plotlyChart;
       if (plotlyChart) {
         Plotly.newPlot(plotlyChart, JSON.parse(figureData));
       } else {
-        console.error('Plot container not found');
+        console.error("Plot container not found");
         this.errorMessage = "Erreur lors de l'affichage du graphique.";
       }
     },
