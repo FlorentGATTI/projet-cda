@@ -47,7 +47,13 @@ async def on_startup():
         logging.error("Failed to establish MongoDB connection.")
         raise RuntimeError("Failed to establish MongoDB connection.")
     else:
-        logging.info("MongoDB connection successfully established.")
+        try:
+            # Vérifier que la connexion fonctionne en effectuant une opération simple
+            mongodb_client.db.command("ping")
+            logging.info("MongoDB connection successfully established and verified.")
+        except Exception as e:
+            logging.error(f"MongoDB connection verification failed: {e}")
+            raise RuntimeError("Failed to verify MongoDB connection.")
 
 @app.on_event("shutdown")
 async def on_shutdown():
