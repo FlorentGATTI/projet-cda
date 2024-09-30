@@ -7,6 +7,9 @@
     <div v-if="noDataFound" class="map-overlay">
       <p>Aucune donnée trouvée pour les filtres sélectionnés.</p>
     </div>
+    <div v-if="loading" class="map-overlay">
+      <v-progress-circular indeterminate color="primary"></v-progress-circular>
+    </div>
   </div>
 </template>
 
@@ -14,7 +17,7 @@
 import { ref, onMounted, watch, nextTick } from "vue";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
-import { getFullStateName, getFullTerritoryName, getStateCoordinates, getTerritoryCoordinates } from "../../../data/stateTerritoryMappings";
+import { getStateCoordinates, getTerritoryCoordinates } from "../../../data/stateTerritoryMappings";
 
 export default {
   name: "StatsDiversity",
@@ -29,9 +32,16 @@ export default {
     const map = ref(null);
     const filtersApplied = ref(false);
     const noDataFound = ref(false);
+    const loading = ref(false);
+    let currentMarker = null;
 
     const initializeMap = () => {
-      if (map.value || !mapContainer.value) return;
+      if (map.value) {
+        map.value.remove();
+        map.value = null;
+      }
+
+      if (!mapContainer.value) return;
 
       map.value = L.map(mapContainer.value, {
         center: [37.8, -96],
@@ -53,10 +63,32 @@ export default {
     const clearMapLayers = () => {
       if (!map.value) return;
       map.value.eachLayer((layer) => {
-        if (!(layer instanceof L.TileLayer)) {
+        if (layer instanceof L.Marker) {
           map.value.removeLayer(layer);
         }
       });
+      currentMarker = null;
+    };
+
+    const createCustomIcon = () => {
+      return L.divIcon({
+        className: "custom-div-icon",
+        html: "<div style='background-color:#6D2E46; width: 12px; height: 12px; border-radius: 50%;'></div>",
+        iconSize: [12, 12],
+        iconAnchor: [6, 6],
+      });
+    };
+
+    const createPopupContent = (item) => {
+      return `
+        <div class="custom-popup">
+          <h3>${props.filters.fullName}</h3>
+          <p><strong>Prénom:</strong> ${item.Name}</p>
+          <p><strong>Sexe:</strong> ${item.Sex === "M" ? "Masculin" : "Féminin"}</p>
+          <p><strong>Année:</strong> ${item.Year}</p>
+          <p><strong>Nombre de naissances:</strong> ${item.Count}</p>
+        </div>
+      `;
     };
 
     const displayFilteredDataOnMap = (data) => {
@@ -65,34 +97,25 @@ export default {
 
       if (data.length > 0) {
         const item = data[0];
-        const coordinates = item.State ? getStateCoordinates(item.State) : getTerritoryCoordinates(item.Territory);
-        const fullName = item.State ? getFullStateName(item.State) : getFullTerritoryName(item.Territory);
+        const coordinates = props.filters.selectedType === "state" ? getStateCoordinates(item.State) : getTerritoryCoordinates(item.Territory);
 
         if (coordinates) {
-          map.value.setView(coordinates, 6);
+          if (map.value) {
+            map.value.setView(coordinates, 6, { animate: true, duration: 1 });
 
-          const customIcon = L.divIcon({
-            className: "custom-div-icon",
-            html: "<div style='background-color:#6D2E46; width: 12px; height: 12px; border-radius: 50%;'></div>",
-            iconSize: [12, 12],
-            iconAnchor: [6, 6],
-          });
+            const customIcon = createCustomIcon();
+            currentMarker = L.marker(coordinates, { icon: customIcon }).addTo(map.value);
 
-          const marker = L.marker(coordinates, { icon: customIcon }).addTo(map.value);
+            const popupContent = createPopupContent(item);
+            currentMarker.bindPopup(popupContent).openPopup();
 
-          const popupContent = `
-        <div class="custom-popup">
-          <h3>${fullName}</h3>
-          <p><strong>Prénom:</strong> ${item.Name}</p>
-          <p><strong>Sexe:</strong> ${item.Sex === "M" ? "Masculin" : "Féminin"}</p>
-          <p><strong>Année:</strong> ${item.Year}</p>
-          <p><strong>Nombre:</strong> ${item.Count}</p>
-        </div>
-      `;
-
-          marker.bindPopup(popupContent).openPopup();
+            nextTick(() => {
+              map.value.invalidateSize();
+            });
+          }
         } else {
-          console.error("Coordonnées non trouvées pour:", item.State || item.Territory);
+          console.error("Coordonnées non trouvées pour:", props.filters.selectedValue);
+          noDataFound.value = true;
         }
       } else {
         noDataFound.value = true;
@@ -102,15 +125,19 @@ export default {
     };
 
     const fetchAndDisplayData = async () => {
-      const { selectedRegionType, region, year, sex, name } = props.filters;
+      const { selectedType, selectedValue, year, sex, name } = props.filters;
 
-      if (!selectedRegionType || !region || !year || !sex || !name) {
+      if (!selectedType || !selectedValue || !year || !sex || !name) {
         filtersApplied.value = false;
         return;
       }
 
+      loading.value = true;
       try {
-        const response = await fetch(`http://localhost:8000/api/names_data?region_type=${selectedRegionType}&region_name=${region}&year=${year}&sex=${sex}&name=${name}`);
+        const response = await fetch(`http://localhost:8000/api/names_data?selected_type=${selectedType}&${selectedType}=${selectedValue}&year=${year}&sex=${sex}&name=${name}`);
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
         const data = await response.json();
 
         if (Array.isArray(data) && data.length > 0) {
@@ -123,6 +150,8 @@ export default {
         console.error("Erreur lors de la récupération des données :", error);
         noDataFound.value = true;
         filtersApplied.value = true;
+      } finally {
+        loading.value = false;
       }
     };
 
@@ -135,9 +164,7 @@ export default {
       (newFilters, oldFilters) => {
         if (JSON.stringify(newFilters) !== JSON.stringify(oldFilters)) {
           nextTick(() => {
-            if (!map.value) {
-              initializeMap();
-            }
+            initializeMap();
             fetchAndDisplayData();
           });
         }
@@ -149,6 +176,7 @@ export default {
       mapContainer,
       filtersApplied,
       noDataFound,
+      loading,
       fetchAndDisplayData,
     };
   },
@@ -180,7 +208,7 @@ export default {
   display: flex;
   justify-content: center;
   align-items: center;
-  z-index: 1000;
+  z-index: 500;
 }
 
 .map-overlay p {
