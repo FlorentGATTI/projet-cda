@@ -110,11 +110,6 @@
     background-color: #f5f5f5;
   }
   
-  .main-title {
-    color: #1976D2;
-    font-size: 2.5em;
-  }
-  
   .subtitle {
     font-size: 1.2em;
     color: #666;

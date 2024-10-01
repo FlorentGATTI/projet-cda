@@ -4,7 +4,7 @@
       <v-select v-model="selectedName1" :items="availableNames" label="Sélectionnez le premier prénom" solo hide-details class="name-select" placeholder="Recherchez ou sélectionnez un prénom" searchable v-if="availableNames.length"></v-select>
 
       <v-select v-model="selectedName2" :items="availableNames" label="Sélectionnez le deuxième prénom (facultatif)" solo hide-details class="name-select" placeholder="Recherchez ou sélectionnez un prénom" searchable v-if="availableNames.length"></v-select>
-      <v-btn color="primary" @click="fetchTrends" class="trend-button">Générer un graphique de tendances</v-btn>
+      <v-btn @click="fetchTrends" class="secondary-button">Générer un graphique de tendances</v-btn>
     </div>
 
     <div v-if="errorMessage" class="error-message">{{ errorMessage }}</div>

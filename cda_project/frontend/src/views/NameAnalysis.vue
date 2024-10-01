@@ -84,12 +84,6 @@ export default {
   font-family: 'Roboto', sans-serif;
 }
 
-h1 {
-  color: #1976D2; /* Blue */
-  font-size: 2.5em;
-  margin-bottom: 20px;
-}
-
 .main-content {
   background: #E1D7CD; /* Light Beige */
   padding: 20px;

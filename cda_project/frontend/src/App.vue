@@ -1,6 +1,7 @@
 <template>
-  <v-app>
-    <v-app-bar app color="primary" dark class="elevation-2 artistic-navbar sticky-navbar">
+  <v-app @touchstart="startTouch" @touchend="endTouch">
+    <!-- Navbar -->
+    <v-app-bar class="navbar">
       <v-toolbar-title class="title">
         <img src="@/assets/logoCDA.png" alt="Logo" style="height: 50px" />
       </v-toolbar-title>
@@ -15,12 +16,11 @@
       <!-- Menu burger pour mobile -->
       <v-btn icon class="d-lg-none" @click="toggleNavbar" :color="navbarOpen ? 'secondary' : 'white'" aria-label="Toggle navigation" :aria-expanded="navbarOpen" aria-controls="nav-dropdown">
         <v-icon>mdi-menu</v-icon>
-      <!--  <v-btn icon class="d-inline-flex d-lg-none" @click="toggleNavbar" :color="navbarOpen ? 'secondary' : 'white'" aria-label="Toggle navigation" :aria-expanded="navbarOpen" aria-controls="nav-dropdown">
-        <v-icon>{{ navbarOpen ? "mdi-close" : "mdi-menu" }}</v-icon>  -->
       </v-btn>
 
+      <!-- Desktop Navigation Links -->
       <v-row class="nav-buttons-desktop" align="center" justify="end" v-if="isDesktop">
-        <v-btn v-for="link in navLinks" :key="link.path" class="nav-btn nav-btn-spacing" text @click="navigateTo(link.path)" :class="{ 'active-link': isActiveRoute(link.path) }">
+        <v-btn v-for="link in navLinks" :key="link.path" class="nav-btn nav-btn-spacing" text @click="navigateTo(link.path)">
           {{ link.name }}
         </v-btn>
       </v-row>
@@ -48,36 +48,17 @@
         <!-- Page Content -->
         <v-container fluid class="content-container">
           <router-view :filters="filters" />
-    <!-- <div class="navbar-dropdown" :class="{ 'navbar-open': navbarOpen }">
-      <v-list>
-        <v-list-item v-for="link in navLinks" :key="link.path" @click="navigateTo(link.path)" :class="{ 'active-link': isActiveRoute(link.path) }">
-          <v-list-item-title>{{ link.name }}</v-list-item-title>
-        </v-list-item>
-      </v-list>
-    </div>
-
-    <div @touchstart="startTouch" @touchmove="moveTouch" @touchend="endTouch">
-      <v-main :class="{ 'with-sidebar': shouldShowSidebar && sidebarOpen, 'without-sidebar': !shouldShowSidebar || !sidebarOpen }">
-        <v-container fluid class="main-container">
-          <SideBar v-if="shouldShowSidebar" :class="['sidebar-desktop', { 'sidebar-open': sidebarOpen }]" @apply-filters="handleApplyFilters" :key="sidebarKey" ref="sidebarRef" />
-          <v-container fluid class="content-container">
-            <router-view :filters="filters" ref="statsDiversityRef" />
-          </v-container> -->
         </v-container>
-      </v-main>
-    </div>
+      </v-container>
+    </v-main>
   </v-app>
 </template>
 
 <script>
-import { ref, computed, onMounted, onBeforeUnmount, watch } from "vue";
+import { ref, computed, onMounted, onBeforeUnmount } from "vue";
 import { useRouter, useRoute } from "vue-router";
-import { useDisplay } from "vuetify";
 import SideBar from "./components/SideBar.vue";
-import debounce from "lodash/debounce";
-import { useSwipe } from "./composables/useSwipe";
-import { nextTick } from 'vue'
-
+import { debounce } from "lodash"; // Import lodash debounce function
 
 export default {
   name: "App",
@@ -85,23 +66,16 @@ export default {
   setup() {
     const router = useRouter();
     const route = useRoute();
-    const { lgAndUp } = useDisplay();
 
     const navbarOpen = ref(false);
     const sidebarOpen = ref(false);
-    const statsDiversityRef = ref(null);
-    const sidebarRef = ref(null);
-    const sidebarKey = ref(0);
+    const startX = ref(0);
 
-    const filters = ref({
-      selectedType: "state",
-      selectedValue: null,
-      year: null,
-      sex: null,
-      name: null,
-    });
+    const filters = ref({ name: "", sexe: "", year: null });
 
-    const isDesktop = computed(() => lgAndUp.value);
+    const windowWidth = ref(window.innerWidth);
+    const breakpoint = 1280;
+    const isDesktop = computed(() => windowWidth.value >= breakpoint);
 
     const navLinks = [
       { name: "Accueil", path: "/" },
@@ -116,56 +90,36 @@ export default {
     });
 
     const toggleNavbar = () => {
-      sidebarOpen.value = false;
       navbarOpen.value = !navbarOpen.value;
     };
 
-    const { startTouch, moveTouch, endTouch } = useSwipe({
-      onSwipeRight: () => {
-        if (shouldShowSidebar.value && !sidebarOpen.value) {
-          sidebarOpen.value = true;
-        }
-      },
-      onSwipeLeft: () => {
-        if (shouldShowSidebar.value && sidebarOpen.value) {
-          sidebarOpen.value = false;
-        }
-      },
-    });
+    const startTouch = (event) => {
+      startX.value = event.touches[0].clientX;
+    };
+
+    const endTouch = (event) => {
+      const endX = event.changedTouches[0].clientX;
+      if (endX - startX.value > 100) {
+        sidebarOpen.value = true;
+      } else if (startX.value - endX > 100) {
+        sidebarOpen.value = false;
+      }
+    };
 
     const navigateTo = (path) => {
       router.push(path);
       navbarOpen.value = false;
-      if (path !== "/stats-diversity") {
-        sidebarOpen.value = false;
-      }
-    };
-
-    const isActiveRoute = (path) => {
-      return route.path === path;
     };
 
     const handleResize = debounce(() => {
+      windowWidth.value = window.innerWidth;
       if (isDesktop.value) {
         navbarOpen.value = false;
-        sidebarOpen.value = false;
       }
     }, 100);
 
-    const resetSidebarFilters = () => {
-      sidebarKey.value += 1;
-      if (sidebarRef.value) {
-        sidebarRef.value.resetFilters();
-      }
-    };
-
-    const handleApplyFilters = (appliedFilters) => {
-      filters.value = { ...filters.value, ...appliedFilters };
-      if (statsDiversityRef.value && statsDiversityRef.value.fetchAndDisplayData) {
-        nextTick(() => {
-          statsDiversityRef.value.fetchAndDisplayData();
-        });
-      }
+    const updateFilters = (newFilters) => {
+      filters.value = newFilters;
     };
 
     const loggedIn = computed(() => !!localStorage.getItem("user")); // Vérifie si l'utilisateur est connecté
@@ -183,14 +137,6 @@ export default {
       window.removeEventListener("resize", handleResize);
     });
 
-    watch(route, () => {
-      if (shouldShowSidebar.value) {
-        resetSidebarFilters();
-      } else {
-        sidebarOpen.value = false;
-      }
-    });
-
     return {
       navbarOpen,
       sidebarOpen,
@@ -199,19 +145,13 @@ export default {
       navLinks,
       toggleNavbar,
       startTouch,
-      moveTouch,
       endTouch,
       navigateTo,
-      isActiveRoute,
       shouldShowSidebar,
       filters,
       updateFilters,
       loggedIn,
       logout,
-      statsDiversityRef,
-      handleApplyFilters,
-      sidebarRef,
-      sidebarKey,
     };
   },
 };
@@ -222,97 +162,42 @@ export default {
 body,
 .v-application,
 main {
-  background-color: #f5f5f5;
-  color: #2c3e50;
+  background-color: #1e1e2f; /* Couleur de fond légèrement plus claire */
+  color: #9a9a9a;
   font-family: "Arial", sans-serif;
   overflow-x: hidden;
 }
 
-/* Barre de navigation */
-.v-app-bar {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  z-index: 1000;
-  background-color: #a26769;
-  padding: 10px 30px;
-  box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.1);
+.main-title {
+    color: #9a9a9a;
+    font-size: 3em;
+  }
+
+.v-toolbar {
+  background-color: #1e1e2f !important;
 }
 
 .sticky-navbar {
-  z-index: 1000;
+  z-index: 100;
 }
 
-/* Navbar dropdown */
-.navbar-dropdown {
-  position: fixed;
-  top: 74px;
-  left: 0;
-  width: 100%;
-  height: 35%;
-  background-color: rgba(162, 103, 105, 0.95);
-  z-index: 999;
-  transform: translateY(-100%);
-  box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.1);
-  visibility: hidden;
-  opacity: 0;
-  transition: transform 0.3s ease-in-out, opacity 0.3s ease-in-out, visibility 0.3s ease-in-out;
-  pointer-events: none;
-}
-
-.navbar-open {
-  transform: translateY(0);
-  visibility: visible;
-  opacity: 1;
-  pointer-events: auto;
-}
-
-.navbar-dropdown .v-list {
-  padding: 16px 0;
-  background-color: transparent;
-}
-
-.navbar-dropdown .v-list-item {
-  width: 100%;
-  top: 10px;
-  height: 40%;
-  padding: 0 24px;
-  margin-bottom: 8px;
-  color: #ffffff;
-  font-weight: 600;
-  transition: background-color 0.3s ease, transform 0.3s ease;
-}
-
-.navbar-dropdown .v-list-item:hover,
-.navbar-dropdown .v-list-item.active-link {
-  background-color: rgba(255, 255, 255, 0.2);
-  transform: scale(1.05);
-}
-
-.navbar-dropdown .v-list-item-title {
-  text-align: center;
-  color: #ffffff;
-  font-size: 18px;
-}
-
-/* Sidebar */
+/* Sidebar desktop */
 .sidebar-desktop {
   position: fixed;
   top: 64px;
   bottom: 0;
-  left: -250px;
+  left: 0;
   width: 250px;
   background-color: #ffffff;
   padding: 20px;
-  box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
-  border-right: 1px solid #e0e0e0;
-  transition: transform 0.3s ease-in-out;
-  z-index: 98;
+  box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1); /* Ombre plus douce */
+  border-right: 1px solid #e0e0e0; /* Légère bordure pour séparer visuellement */
 }
 
-.sidebar-open {
-  transform: translateX(250px);
+/* Sidebar mobile */
+.mobile-sidebar {
+  z-index: 90;
+  background-color: #ffffff;
 }
 
 /* Conteneur principal */
@@ -320,10 +205,9 @@ main {
   display: flex;
   flex-grow: 1;
   margin-top: 64px;
-  padding: 30px;
+  padding: 30px; /* Plus d'espace pour aérer le contenu */
   box-sizing: border-box;
   overflow: auto;
-  transition: margin-left 0.3s ease-in-out;
 }
 
 .with-sidebar {
@@ -332,16 +216,16 @@ main {
 
 .without-sidebar {
   margin-left: 0;
-  padding: 30px 50px;
+  padding: 30px 50px; /* Confort visuel accru pour les pages sans sidebar */
 }
 
 /* Conteneur de contenu */
 .content-container {
   flex-grow: 1;
   overflow-y: auto;
-  background-color: #ffffff;
-  border-radius: 8px;
-  box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.05);
+  background-color: #27293d; /* Couleur de fond blanche pour un look épuré */
+  border-radius: 8px; /* Coins arrondis pour un look moderne */
+  box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.05); /* Légère ombre pour un effet flottant */
   padding: 20px;
 }
 
@@ -349,20 +233,14 @@ main {
 .nav-btn {
   transition: transform 0.2s, background-color 0.2s, color 0.2s;
   color: #ffffff;
-  font-weight: 600;
-  padding: 10px 20px;
-  background: linear-gradient(45deg, #a26769, #6d2e46);
 }
 
-.nav-btn:hover,
-.nav-btn.active-link {
-  transform: scale(1.05);
-  background-color: #6d2e46;
-  color: #ffffff;
+.nav-btn:hover {
+  transform: scale(1.1); /* Légère augmentation de taille au survol */
 }
 
 .nav-btn-spacing {
-  margin-right: 15px;
+  margin-right: 15px; /* Plus d'espace entre les boutons */
 }
 
 .nav-btn-spacing:last-child {
@@ -370,39 +248,32 @@ main {
 }
 
 /* Menu déroulant (burger menu) */
-.navbar-dropdown .v-list {
-  padding: 0;
-  background-color: transparent;
+.nav-dropdown {
+  position: absolute;
+  top: 70px;
+  right: 0;
+  width: 100%;
+  z-index: 99;
+  flex-direction: column;
+  padding-top: 20px;
+  backdrop-filter: blur(40px);
+  box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.2);
 }
 
-.navbar-dropdown .v-list-item {
-  min-height: 48px;
-  color: #ffffff;
-  font-weight: 600;
-  transition: background-color 0.3s ease, transform 0.3s ease;
-}
-
-.navbar-dropdown .v-list-item:hover,
-.navbar-dropdown .v-list-item.active-link {
-  background-color: rgba(25, 118, 210, 0.8);
-  transform: scale(1.05);
-}
-
-.navbar-dropdown .v-list-item-title {
+.nav-btn-dropdown {
+  margin-bottom: 15px; /* Espace supplémentaire entre les boutons */
+  width: 500px;
   text-align: center;
-  color: #ffffff;
+  background-color: transparent; /* Fond transparent pour un effet plus léger */
+  transition: background-color 0.3s ease, transform 0.3s ease; /* Transition pour les effets de hover */
+}
+
+.nav-btn-dropdown:hover {
+  transform: scale(1.05); /* Légère augmentation de la taille au survol */
 }
 
 .nav-buttons-desktop .v-btn:last-child {
-  margin-right: 25px;
-}
-
-/* Boutons généraux */
-.v-btn {
-  background: linear-gradient(45deg, #1976d2, #0b4678);
-  box-shadow: 0px 4px 15px rgba(0, 0, 0, 0.15);
-  color: #e1d7cd;
-  font-weight: 600;
+  margin-right: 25px; /* Ajustez cette valeur selon les besoins */
 }
 
 /* Effet de parallaxe */
@@ -411,8 +282,29 @@ main {
   background-size: cover;
 }
 
+/* Animations */
+.slide-left-enter-active,
+.slide-left-leave-active {
+  transition: transform 0.3s ease;
+}
+
+.slide-left-enter,
+.slide-left-leave-to {
+  transform: translateX(-100%);
+}
+
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.5s;
+}
+
+.fade-enter,
+.fade-leave-to {
+  opacity: 0;
+}
+
 /* Responsivité */
-@media (max-width: 1420px) {
+@media (max-width: 1280px) {
   .v-main {
     margin-left: 0;
     padding: 20px;
@@ -421,18 +313,10 @@ main {
   .nav-buttons-desktop {
     display: none;
   }
-
-  .sidebar-desktop {
-    transform: translateX(-250px);
-  }
-
-  .with-sidebar .sidebar-desktop {
-    transform: translateX(0);
-  }
 }
 
-@media (min-width: 1421px) {
-  .navbar-dropdown {
+@media (min-width: 1281px) {
+  .nav-dropdown {
     display: none;
   }
 }

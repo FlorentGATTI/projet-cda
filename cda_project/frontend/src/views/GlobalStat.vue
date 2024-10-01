@@ -1,12 +1,6 @@
 <template>
-  <h2>Stat</h2>
-
   <v-container fluid>
-    <h2>Statistiques Globales des Prénoms</h2>
-
-    <!-- Year Selection -->
-    <v-select v-model="selectedYear" :items="years" label="Sélectionnez l'année" solo hide-details class="year-select" placeholder="Recherchez ou sélectionnez une année" searchable></v-select>
-    <!-- <v-btn @click="generateYearlyBirthsGraph" class="primary-button">Générer le graphique</v-btn> -->
+    <h1 class="text-center main-title">Statistiques Globales</h1>
 
     <!-- Boutons pour d'autres analyses -->
     <div class="buttons">
@@ -33,7 +27,7 @@
     <!-- Placeholder pour les graphiques interactifs -->
     <div class="graph-container">
       <!-- Placeholder pour un graphique -->
-      <div class="graph-placeholder">
+      <div>
         <div class="plot-container" v-if="!loading">
           <img :src="plotImage" alt="Generated Plot" v-if="plotImage && !errorMessage" />
         </div>
@@ -203,23 +197,11 @@ export default {
 }
 
 .buttons {
-  margin: 20px 0;
-}
-
-.secondary-button {
-  background-color: #a26769; /* Brun-rosé */
-  color: white;
-  border: none;
-  padding: 10px 15px;
-  margin: 5px;
-  cursor: pointer;
-  font-size: 0.9em;
-  border-radius: 5px;
-  transition: background-color 0.3s ease;
-}
-
-.secondary-button:hover {
-  background-color: #6d2e46; /* Dark Pink */
+  margin-top: 20px;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
 }
 
 .primary-button {

@@ -23,40 +23,6 @@
       </v-col>
     </v-row>
 
-    <!-- Section de navigation -->
-    <v-row class="navigation-section text-center">
-      <v-col cols="12" md="4" class="mx-auto">
-        <v-btn
-          class="nav-button"
-          large
-          color="primary"
-          @click="navigateTo('/name-analysis')"
-        >
-          Analyse des Prénoms
-        </v-btn>
-      </v-col>
-      <v-col cols="12" md="4" class="mx-auto">
-        <v-btn
-          class="nav-button"
-          large
-          color="primary"
-          @click="navigateTo('/global-stat')"
-        >
-          Statistiques Globales
-        </v-btn>
-      </v-col>
-      <v-col cols="12" md="4" class="mx-auto">
-        <v-btn
-          class="nav-button"
-          large
-          color="primary"
-          @click="navigateTo('/stats-diversity')"
-        >
-          Diversité Géographique
-        </v-btn>
-      </v-col>
-    </v-row>
-
     <!-- Section d'informations supplémentaires -->
     <v-row class="extra-info-section">
       <v-col cols="12" md="8" class="mx-auto">
@@ -92,22 +58,11 @@ export default {
 </script>
 
 <style scoped>
-.home-container {
-  background-color: #f5f5f5;
-  padding: 40px;
-  font-family: 'Roboto', sans-serif;
-}
-
-.main-title {
-  font-size: 3em;
-  color: #1976D2;
-  margin-bottom: 20px;
-}
 
 .subtitle {
   font-size: 1.5em;
-  color: #6D2E46;
-  margin-bottom: 40px;
+  color: #00f2c3;
+  margin-bottom: 20px;
 }
 
 .introduction-section {
@@ -127,13 +82,4 @@ export default {
   margin-bottom: 20px;
 }
 
-.extra-info-section h2 {
-  color: #1976D2;
-  margin-bottom: 20px;
-}
-
-.extra-info-section p {
-  font-size: 1.2em;
-  color: #2c3e50;
-}
 </style>
