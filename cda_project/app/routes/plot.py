@@ -88,8 +88,10 @@ def get_compound_names_plot():
 def get_trends_plot(names: str = Query(..., description="Comma-separated list of names")):
     try:
         pivot_table = get_cached_pivot_table()
-        name_list = [name.strip() for name in names.split(',')]
-        fig = study_trends(pivot_table, name_list)
+        name_list = [name.strip() for name in names.split(',') if name.strip()]
+        if len(name_list) == 0:
+            raise HTTPException(status_code=400, detail="At least one name must be provided")
+        fig = study_trends(pivot_table, *name_list[:2])  # Unpack up to 2 names
         if fig is None:
             raise HTTPException(status_code=404, detail="No data available for the specified names")
         return JSONResponse(content={"figure": plot_to_json(fig)})

@@ -71,9 +71,35 @@ export default {
       }
     },
 
-    async fetchTrends() {
-      await this.handlePlotRequest('trends');
-    },
+  async fetchTrends() {
+  this.errorMessage = "";
+  this.loading = true;
+
+  try {
+    const names = [this.selectedName1, this.selectedName2]
+      .filter(name => name)
+      .join(',');
+    
+    if (!names) {
+      throw new Error("Veuillez sélectionner au moins un prénom.");
+    }
+
+    const url = `http://localhost:8000/api/plots/trends?names=${encodeURIComponent(names)}`;
+    const response = await fetch(url);
+    const data = await response.json();
+
+    if (response.ok) {
+      console.log("API Response Data:", data);
+      this.renderPlot(data.figure);
+    } else {
+      throw new Error(data.detail || "Erreur inconnue lors de la génération du graphique.");
+    }
+  } catch (error) {
+    this.errorMessage = error.message;
+  } finally {
+    this.loading = false;
+  }
+},
 
     async handlePlotRequest(plotType) {
       this.errorMessage = "";
@@ -92,7 +118,7 @@ export default {
         const data = await response.json();
 
         if (response.ok) {
-          console.log("API Response Data:", data); // Log the response data
+          console.log("API Response Data:", data);
           this.renderPlot(data.figure);
         } else {
           throw new Error(data.detail || "Erreur inconnue lors de la génération du graphique.");
@@ -105,20 +131,21 @@ export default {
     },
 
     renderPlot(figureData) {
-      const plotlyChart = this.$refs.plotlyChart;
-      if (plotlyChart) {
-        try {
-          const parsedData = JSON.parse(figureData); // Ensure the data is parsed correctly
-          Plotly.newPlot(plotlyChart, parsedData);
-        } catch (error) {
-          console.error('Error parsing figure data:', error);
-          this.errorMessage = "Erreur lors de l'affichage du graphique.";
-        }
-      } else {
-        console.error('Plot container not found');
-        this.errorMessage = "Erreur lors de l'affichage du graphique.";
-      }
-    },
+  const plotlyChart = this.$refs.plotlyChart;
+  if (plotlyChart) {
+    try {
+      // Check if figureData is already an object
+      const plotData = typeof figureData === 'string' ? JSON.parse(figureData) : figureData;
+      Plotly.newPlot(plotlyChart, plotData);
+    } catch (error) {
+      console.error('Error rendering plot:', error);
+      this.errorMessage = "Erreur lors de l'affichage du graphique.";
+    }
+  } else {
+    console.error('Plot container not found');
+    this.errorMessage = "Erreur lors de l'affichage du graphique.";
+  }
+},
   },
 };
 </script>

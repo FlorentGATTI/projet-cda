@@ -6,13 +6,13 @@ import base64
 def create_pivot_table(data):
     return data.pivot_table(values='Count', index='Year', columns='Name', aggfunc='sum', fill_value=0)
 
-def study_trends(pivot_table, names):
-    valid_names = [name for name in names if name in pivot_table.columns]
-    if not valid_names:
+def study_trends(pivot_table, name1, name2=None):
+    names = [name for name in [name1, name2] if name and name in pivot_table.columns]
+    if not names:
         return None
 
     fig = go.Figure()
-    for name in valid_names:
+    for name in names:
         fig.add_trace(go.Scatter(x=pivot_table.index, y=pivot_table[name], mode='lines', name=name))
 
     fig.update_layout(title='Tendances des prénoms', xaxis_title='Année', yaxis_title='Nombre de naissances')
