@@ -1,68 +1,51 @@
 <template>
   <v-app>
-    <v-app-bar app color="primary" dark class="elevation-2 artistic-navbar sticky-navbar">
+    <v-app-bar v-if="showNavbar" app color="primary" dark class="elevation-2 artistic-navbar sticky-navbar">
       <v-toolbar-title class="title">
         <img src="@/assets/logoCDA.png" alt="Logo" style="height: 50px" />
       </v-toolbar-title>
 
       <v-spacer></v-spacer>
 
-      <!-- Bouton de déconnexion pour desktop -->
-      <v-btn v-if="loggedIn" class="nav-btn" text @click="logout">
-        Déconnexion
-      </v-btn>
-
       <!-- Menu burger pour mobile -->
       <v-btn icon class="d-lg-none" @click="toggleNavbar" :color="navbarOpen ? 'secondary' : 'white'" aria-label="Toggle navigation" :aria-expanded="navbarOpen" aria-controls="nav-dropdown">
-        <v-icon>mdi-menu</v-icon>
-      <!--  <v-btn icon class="d-inline-flex d-lg-none" @click="toggleNavbar" :color="navbarOpen ? 'secondary' : 'white'" aria-label="Toggle navigation" :aria-expanded="navbarOpen" aria-controls="nav-dropdown">
-        <v-icon>{{ navbarOpen ? "mdi-close" : "mdi-menu" }}</v-icon>  -->
+        <v-icon>{{ navbarOpen ? "mdi-close" : "mdi-menu" }}</v-icon>
       </v-btn>
 
+      <!-- Boutons de navigation pour desktop -->
       <v-row class="nav-buttons-desktop" align="center" justify="end" v-if="isDesktop">
         <v-btn v-for="link in navLinks" :key="link.path" class="nav-btn nav-btn-spacing" text @click="navigateTo(link.path)" :class="{ 'active-link': isActiveRoute(link.path) }">
           {{ link.name }}
         </v-btn>
+        <v-btn v-if="loggedIn" class="nav-btn" text @click="logout">
+          <v-icon>mdi-logout</v-icon>
+        </v-btn>
       </v-row>
     </v-app-bar>
 
-    <!-- Menu déroulant pour le menu burger -->
-    <transition name="fade">
-      <v-row v-if="navbarOpen && !isDesktop" id="nav-dropdown" class="nav-dropdown" align="center" justify="center">
-        <v-btn v-for="link in navLinks" :key="link.path" class="nav-btn-dropdown" text @click="navigateTo(link.path)">
-          {{ link.name }}
-        </v-btn>
-        <!-- Bouton de déconnexion pour mobile -->
-        <v-btn v-if="loggedIn" class="nav-btn-dropdown" text @click="logout">
-          Déconnexion
-        </v-btn>
-      </v-row>
-    </transition>
+    <!-- Menu déroulant central pour le menu burger -->
+    <v-expand-transition>
+      <div v-if="showNavbar && navbarOpen && !isDesktop" class="nav-dropdown">
+        <v-container class="d-flex flex-column align-center justify-center h-100">
+          <v-btn v-for="link in navLinks" :key="link.path" class="nav-btn-dropdown mb-2" text @click="navigateTo(link.path)">
+            {{ link.name }}
+          </v-btn>
+          <v-btn v-if="loggedIn" class="nav-btn-dropdown" text @click="logout">
+            <v-icon left>mdi-logout</v-icon>
+            Déconnexion
+          </v-btn>
+        </v-container>
+      </div>
+    </v-expand-transition>
 
     <!-- Contenu principal avec sidebar -->
-    <v-main :class="shouldShowSidebar ? 'with-sidebar' : 'without-sidebar'">
-      <v-container fluid class="main-container">
-        <!-- Sidebar (affichée uniquement pour certaines pages) -->
-        <SideBar v-if="shouldShowSidebar" class="sidebar-desktop" @filters-applied="updateFilters" />
-
-        <!-- Page Content -->
-        <v-container fluid class="content-container">
-          <router-view :filters="filters" />
-    <!-- <div class="navbar-dropdown" :class="{ 'navbar-open': navbarOpen }">
-      <v-list>
-        <v-list-item v-for="link in navLinks" :key="link.path" @click="navigateTo(link.path)" :class="{ 'active-link': isActiveRoute(link.path) }">
-          <v-list-item-title>{{ link.name }}</v-list-item-title>
-        </v-list-item>
-      </v-list>
-    </div>
-
     <div @touchstart="startTouch" @touchmove="moveTouch" @touchend="endTouch">
       <v-main :class="{ 'with-sidebar': shouldShowSidebar && sidebarOpen, 'without-sidebar': !shouldShowSidebar || !sidebarOpen }">
         <v-container fluid class="main-container">
           <SideBar v-if="shouldShowSidebar" :class="['sidebar-desktop', { 'sidebar-open': sidebarOpen }]" @apply-filters="handleApplyFilters" :key="sidebarKey" ref="sidebarRef" />
           <v-container fluid class="content-container">
             <router-view :filters="filters" ref="statsDiversityRef" />
-          </v-container> -->
+          </v-container>
         </v-container>
       </v-main>
     </div>
@@ -76,8 +59,7 @@ import { useDisplay } from "vuetify";
 import SideBar from "./components/SideBar.vue";
 import debounce from "lodash/debounce";
 import { useSwipe } from "./composables/useSwipe";
-import { nextTick } from 'vue'
-
+import { nextTick } from "vue";
 
 export default {
   name: "App",
@@ -92,6 +74,7 @@ export default {
     const statsDiversityRef = ref(null);
     const sidebarRef = ref(null);
     const sidebarKey = ref(0);
+    const isLoggedIn = ref(false);
 
     const filters = ref({
       selectedType: "state",
@@ -113,6 +96,10 @@ export default {
 
     const shouldShowSidebar = computed(() => {
       return route.path === "/stats-diversity";
+    });
+
+    const showNavbar = computed(() => {
+      return route.path !== "/login";
     });
 
     const toggleNavbar = () => {
@@ -168,19 +155,25 @@ export default {
       }
     };
 
-    const loggedIn = computed(() => !!localStorage.getItem("user")); // Vérifie si l'utilisateur est connecté
-
     const logout = () => {
-      localStorage.removeItem("user"); // Suppression de l'utilisateur du localStorage
-      router.push("/login"); // Redirection vers la page de connexion
+      localStorage.removeItem("user");
+      isLoggedIn.value = false;
+      router.push("/login");
+    };
+
+    const checkLoginStatus = () => {
+      isLoggedIn.value = !!localStorage.getItem("user");
     };
 
     onMounted(() => {
       window.addEventListener("resize", handleResize);
+      checkLoginStatus();
+      window.addEventListener("storage", checkLoginStatus);
     });
 
     onBeforeUnmount(() => {
       window.removeEventListener("resize", handleResize);
+      window.removeEventListener("storage", checkLoginStatus);
     });
 
     watch(route, () => {
@@ -189,6 +182,7 @@ export default {
       } else {
         sidebarOpen.value = false;
       }
+      checkLoginStatus();
     });
 
     return {
@@ -205,13 +199,13 @@ export default {
       isActiveRoute,
       shouldShowSidebar,
       filters,
-      updateFilters,
-      loggedIn,
+      loggedIn: isLoggedIn,
       logout,
       statsDiversityRef,
       handleApplyFilters,
       sidebarRef,
       sidebarKey,
+      showNavbar,
     };
   },
 };
@@ -230,70 +224,45 @@ main {
 
 /* Barre de navigation */
 .v-app-bar {
+  background-color: #1976d2 !important; /* Retour au bleu */
+  padding: 0 30px;
+}
+
+.sticky-navbar {
   position: fixed;
   top: 0;
   left: 0;
   width: 100%;
   z-index: 1000;
-  background-color: #a26769;
-  padding: 10px 30px;
-  box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.1);
 }
 
-.sticky-navbar {
-  z-index: 1000;
-}
-
-/* Navbar dropdown */
-.navbar-dropdown {
+/* Menu déroulant */
+.nav-dropdown {
   position: fixed;
-  top: 74px;
+  top: 64px;
   left: 0;
   width: 100%;
-  height: 35%;
-  background-color: rgba(162, 103, 105, 0.95);
+  height: calc(100vh - 64px);
+  background-color: rgba(25, 118, 210, 0.95); /* Bleu avec transparence */
   z-index: 999;
-  transform: translateY(-100%);
-  box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.1);
-  visibility: hidden;
-  opacity: 0;
-  transition: transform 0.3s ease-in-out, opacity 0.3s ease-in-out, visibility 0.3s ease-in-out;
-  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
 }
 
-.navbar-open {
-  transform: translateY(0);
-  visibility: visible;
-  opacity: 1;
-  pointer-events: auto;
+.nav-btn-dropdown {
+  width: 80%;
+  max-width: 300px;
+  margin-bottom: 10px;
+  color: #ffffff !important;
+  font-size: 1.2rem;
+  text-transform: none;
+  letter-spacing: normal;
 }
 
-.navbar-dropdown .v-list {
-  padding: 16px 0;
-  background-color: transparent;
-}
-
-.navbar-dropdown .v-list-item {
-  width: 100%;
-  top: 10px;
-  height: 40%;
-  padding: 0 24px;
-  margin-bottom: 8px;
-  color: #ffffff;
-  font-weight: 600;
-  transition: background-color 0.3s ease, transform 0.3s ease;
-}
-
-.navbar-dropdown .v-list-item:hover,
-.navbar-dropdown .v-list-item.active-link {
+.nav-btn-dropdown:hover {
   background-color: rgba(255, 255, 255, 0.2);
-  transform: scale(1.05);
-}
-
-.navbar-dropdown .v-list-item-title {
-  text-align: center;
-  color: #ffffff;
-  font-size: 18px;
 }
 
 /* Sidebar */
@@ -335,80 +304,25 @@ main {
   padding: 30px 50px;
 }
 
-/* Conteneur de contenu */
-.content-container {
-  flex-grow: 1;
-  overflow-y: auto;
-  background-color: #ffffff;
-  border-radius: 8px;
-  box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.05);
-  padding: 20px;
-}
-
 /* Boutons de navigation */
 .nav-btn {
-  transition: transform 0.2s, background-color 0.2s, color 0.2s;
-  color: #ffffff;
+  color: #ffffff !important;
   font-weight: 600;
-  padding: 10px 20px;
-  background: linear-gradient(45deg, #a26769, #6d2e46);
+  padding: 5px 15px;
+  background: linear-gradient(45deg, #1976d2, #1565c0); /* Dégradé de bleu */
+  min-width: 0;
+  transition: transform 0.2s, background-color 0.2s;
+  right: 15px;
 }
 
 .nav-btn:hover,
 .nav-btn.active-link {
   transform: scale(1.05);
-  background-color: #6d2e46;
-  color: #ffffff;
+  background-color: #1565c0;
 }
 
 .nav-btn-spacing {
-  margin-right: 15px;
-}
-
-.nav-btn-spacing:last-child {
-  margin-right: 0;
-}
-
-/* Menu déroulant (burger menu) */
-.navbar-dropdown .v-list {
-  padding: 0;
-  background-color: transparent;
-}
-
-.navbar-dropdown .v-list-item {
-  min-height: 48px;
-  color: #ffffff;
-  font-weight: 600;
-  transition: background-color 0.3s ease, transform 0.3s ease;
-}
-
-.navbar-dropdown .v-list-item:hover,
-.navbar-dropdown .v-list-item.active-link {
-  background-color: rgba(25, 118, 210, 0.8);
-  transform: scale(1.05);
-}
-
-.navbar-dropdown .v-list-item-title {
-  text-align: center;
-  color: #ffffff;
-}
-
-.nav-buttons-desktop .v-btn:last-child {
-  margin-right: 25px;
-}
-
-/* Boutons généraux */
-.v-btn {
-  background: linear-gradient(45deg, #1976d2, #0b4678);
-  box-shadow: 0px 4px 15px rgba(0, 0, 0, 0.15);
-  color: #e1d7cd;
-  font-weight: 600;
-}
-
-/* Effet de parallaxe */
-.abstract-bg {
-  background-attachment: fixed;
-  background-size: cover;
+  margin-right: 10px;
 }
 
 /* Responsivité */
@@ -416,10 +330,6 @@ main {
   .v-main {
     margin-left: 0;
     padding: 20px;
-  }
-
-  .nav-buttons-desktop {
-    display: none;
   }
 
   .sidebar-desktop {
@@ -431,8 +341,28 @@ main {
   }
 }
 
+@media (max-width: 1280px) {
+  .nav-buttons-desktop {
+    display: none;
+  }
+}
+
+@media (min-width: 1281px) and (max-width: 1420px) {
+  .nav-buttons-desktop {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+
+  .nav-btn {
+    font-size: 0.9rem;
+    padding: 4px 8px;
+    margin-bottom: 4px;
+  }
+}
+
 @media (min-width: 1421px) {
-  .navbar-dropdown {
+  .nav-dropdown {
     display: none;
   }
 }
