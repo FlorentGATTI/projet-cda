@@ -7,8 +7,16 @@
 
       <v-spacer></v-spacer>
 
-      <v-btn icon class="d-inline-flex d-lg-none" @click="toggleNavbar" :color="navbarOpen ? 'secondary' : 'white'" aria-label="Toggle navigation" :aria-expanded="navbarOpen" aria-controls="nav-dropdown">
-        <v-icon>{{ navbarOpen ? "mdi-close" : "mdi-menu" }}</v-icon>
+      <!-- Bouton de déconnexion pour desktop -->
+      <v-btn v-if="loggedIn" class="nav-btn" text @click="logout">
+        Déconnexion
+      </v-btn>
+
+      <!-- Menu burger pour mobile -->
+      <v-btn icon class="d-lg-none" @click="toggleNavbar" :color="navbarOpen ? 'secondary' : 'white'" aria-label="Toggle navigation" :aria-expanded="navbarOpen" aria-controls="nav-dropdown">
+        <v-icon>mdi-menu</v-icon>
+      <!--  <v-btn icon class="d-inline-flex d-lg-none" @click="toggleNavbar" :color="navbarOpen ? 'secondary' : 'white'" aria-label="Toggle navigation" :aria-expanded="navbarOpen" aria-controls="nav-dropdown">
+        <v-icon>{{ navbarOpen ? "mdi-close" : "mdi-menu" }}</v-icon>  -->
       </v-btn>
 
       <v-row class="nav-buttons-desktop" align="center" justify="end" v-if="isDesktop">
@@ -18,7 +26,29 @@
       </v-row>
     </v-app-bar>
 
-    <div class="navbar-dropdown" :class="{ 'navbar-open': navbarOpen }">
+    <!-- Menu déroulant pour le menu burger -->
+    <transition name="fade">
+      <v-row v-if="navbarOpen && !isDesktop" id="nav-dropdown" class="nav-dropdown" align="center" justify="center">
+        <v-btn v-for="link in navLinks" :key="link.path" class="nav-btn-dropdown" text @click="navigateTo(link.path)">
+          {{ link.name }}
+        </v-btn>
+        <!-- Bouton de déconnexion pour mobile -->
+        <v-btn v-if="loggedIn" class="nav-btn-dropdown" text @click="logout">
+          Déconnexion
+        </v-btn>
+      </v-row>
+    </transition>
+
+    <!-- Contenu principal avec sidebar -->
+    <v-main :class="shouldShowSidebar ? 'with-sidebar' : 'without-sidebar'">
+      <v-container fluid class="main-container">
+        <!-- Sidebar (affichée uniquement pour certaines pages) -->
+        <SideBar v-if="shouldShowSidebar" class="sidebar-desktop" @filters-applied="updateFilters" />
+
+        <!-- Page Content -->
+        <v-container fluid class="content-container">
+          <router-view :filters="filters" />
+    <!-- <div class="navbar-dropdown" :class="{ 'navbar-open': navbarOpen }">
       <v-list>
         <v-list-item v-for="link in navLinks" :key="link.path" @click="navigateTo(link.path)" :class="{ 'active-link': isActiveRoute(link.path) }">
           <v-list-item-title>{{ link.name }}</v-list-item-title>
@@ -32,7 +62,7 @@
           <SideBar v-if="shouldShowSidebar" :class="['sidebar-desktop', { 'sidebar-open': sidebarOpen }]" @apply-filters="handleApplyFilters" :key="sidebarKey" ref="sidebarRef" />
           <v-container fluid class="content-container">
             <router-view :filters="filters" ref="statsDiversityRef" />
-          </v-container>
+          </v-container> -->
         </v-container>
       </v-main>
     </div>
@@ -138,6 +168,13 @@ export default {
       }
     };
 
+    const loggedIn = computed(() => !!localStorage.getItem("user")); // Vérifie si l'utilisateur est connecté
+
+    const logout = () => {
+      localStorage.removeItem("user"); // Suppression de l'utilisateur du localStorage
+      router.push("/login"); // Redirection vers la page de connexion
+    };
+
     onMounted(() => {
       window.addEventListener("resize", handleResize);
     });
@@ -168,6 +205,9 @@ export default {
       isActiveRoute,
       shouldShowSidebar,
       filters,
+      updateFilters,
+      loggedIn,
+      logout,
       statsDiversityRef,
       handleApplyFilters,
       sidebarRef,
