@@ -52,18 +52,6 @@ export default {
           icon: "mdi-calendar-clock",
           fetchMethod: "fetchDecadeAnalysis",
         },
-        {
-          title: "Analyse de Diversité Géographique",
-          description: "Analysez la diversité des prénoms selon les régions.",
-          icon: "mdi-map",
-          fetchMethod: "fetchGeographicDiversity",
-        },
-        {
-          title: "Analyse des Prénoms Composés",
-          description: "Analysez les prénoms composés les plus populaires.",
-          icon: "mdi-account-multiple",
-          fetchMethod: "fetchCompoundNames",
-        },
       ],
       selectedYear: null,
       years: Array.from({ length: 2021 - 1880 + 1 }, (v, k) => 1880 + k),
