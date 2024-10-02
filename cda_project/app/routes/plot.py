@@ -10,6 +10,7 @@ from app.db import get_cached_data, get_cached_pivot_table
 import logging
 import plotly.utils
 
+
 router = APIRouter()
 
 def plot_to_json(fig):

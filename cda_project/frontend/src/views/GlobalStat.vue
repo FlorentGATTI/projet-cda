@@ -63,11 +63,6 @@ export default {
       expandedCard: null,
     };
   },
-  watch: {
-    selectedYear() {
-      this.fetchTotalBirths();
-    },
-  },
   methods: {
     expandCard(index) {
       if (this.expandedCard === index) {
@@ -76,30 +71,6 @@ export default {
       } else {
         this.expandedCard = index;
         this[this.analyses[index].fetchMethod]();
-      }
-    },
-
-    async fetchTotalBirths() {
-      if (!this.selectedYear) return;
-      this.loading = true;
-      this.errorMessage = "";
-      try {
-        const response = await fetch(`${API_BASE_URL}/api/total_births/${this.selectedYear}`, {
-          credentials: "include",
-        });
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        const data = await response.json();
-        this.totalBirths = data.total_births;
-        this.birthsBySex = data.births_by_sex || { M: 0, F: 0 };
-      } catch (error) {
-        console.error("Erreur lors de la récupération du nombre total de naissances :", error);
-        this.errorMessage = `Erreur lors de la récupération des données : ${error.message}`;
-        this.totalBirths = 0;
-        this.birthsBySex = { M: 0, F: 0 };
-      } finally {
-        this.loading = false;
       }
     },
 
@@ -112,9 +83,8 @@ export default {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
         const data = await response.json();
-        if (data.figure) {
-          const figureData = JSON.parse(data.figure);
-          this.renderPlotlyPlot(figureData);
+        if (data && data.figure) {
+          this.renderPlotlyPlot(data.figure);
         } else {
           throw new Error("Format de données non reconnu.");
         }
@@ -129,17 +99,17 @@ export default {
     renderPlotlyPlot(figureData) {
       const plotContainer = document.getElementById(`plot-container-${this.expandedCard}`);
       if (!plotContainer) {
-        console.error('Plot container not found');
+        console.error("Plot container not found");
         return;
       }
-      
+
       const layout = {
         ...figureData.layout,
         width: plotContainer.offsetWidth,
         height: 400,
         margin: { l: 50, r: 50, t: 50, b: 50 },
       };
-      
+
       Plotly.newPlot(plotContainer, figureData.data, layout, { responsive: true });
     },
 
@@ -154,17 +124,6 @@ export default {
     async fetchDecadeAnalysis() {
       await this.handlePlotRequest(`${API_BASE_URL}/api/plots/decade_analysis`);
     },
-
-    async fetchGeographicDiversity() {
-      await this.handlePlotRequest(`${API_BASE_URL}/api/plots/geographic_diversity`);
-    },
-
-    async fetchCompoundNames() {
-      await this.handlePlotRequest(`${API_BASE_URL}/api/plots/compound_names`);
-    },
-  },
-  mounted() {
-    this.fetchTotalBirths();
   },
 };
 </script>
@@ -228,31 +187,10 @@ export default {
   justify-content: center;
 }
 
-.plot-container img {
-  max-width: 100%;
-  height: auto;
-  border-radius: 8px;
-}
-
 .spinner {
   margin-top: 20px;
   display: flex;
   justify-content: center;
-}
-
-.total-births-section {
-  margin-top: 30px;
-  text-align: right;
-}
-
-.total-births-section p {
-  font-size: 1.2em;
-  margin: 0;
-}
-
-.total-births-section span {
-  font-weight: bold;
-  color: #6d2e46;
 }
 
 .error-message {
