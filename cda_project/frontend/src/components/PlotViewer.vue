@@ -1,10 +1,11 @@
 <template>
   <div class="plot-viewer">
     <div class="trend-section">
-      <v-select v-model="selectedName1" :items="availableNames" label="Sélectionnez le premier prénom" solo hide-details class="name-select" placeholder="Recherchez ou sélectionnez un prénom" searchable v-if="availableNames.length"></v-select>
-
-      <v-select v-model="selectedName2" :items="availableNames" label="Sélectionnez le deuxième prénom (facultatif)" solo hide-details class="name-select" placeholder="Recherchez ou sélectionnez un prénom" searchable v-if="availableNames.length"></v-select>
-      <v-btn @click="fetchTrends" class="secondary-button">Générer un graphique de tendances</v-btn>
+      <div class="name-input">
+        <v-select v-model="selectedName1" :items="availableNames" label="Sélectionnez le premier prénom" solo hide-details class="name-select" placeholder="Recherchez ou sélectionnez un prénom" searchable v-if="availableNames.length"></v-select>
+        <v-select v-model="selectedName2" :items="availableNames" label="Sélectionnez le deuxième prénom (facultatif)" solo hide-details class="name-select" placeholder="Recherchez ou sélectionnez un prénom" searchable v-if="availableNames.length"></v-select>
+      </div>
+      <button @click="fetchTrends" class="secondary-button">Générer un graphique de tendances</button>
     </div>
 
     <div v-if="errorMessage" class="error-message">{{ errorMessage }}</div>
@@ -126,11 +127,6 @@ export default {
 <style scoped>
 .plot-viewer {
   text-align: center;
-  background: #cdc1b5;
-  padding: 20px;
-  border-radius: 8px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-  max-width: 100%;
 }
 
 .trend-section {
@@ -172,5 +168,17 @@ export default {
 
 .spinner {
   margin-top: 20px;
+}
+
+.name-input {
+  display: flex;
+  gap: 20px;
+}
+
+@media (max-width: 1280px) {
+  .name-input {
+    flex-direction: column;
+    gap: 5px;
+  }
 }
 </style>

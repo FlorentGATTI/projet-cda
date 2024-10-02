@@ -28,12 +28,12 @@
           </v-row>
         </v-container>
       </div>
+    </div>
 
       <div class="plot-section">
         <PlotViewer ref="plotViewer" />
       </div>
     </div>
-  </div>
 </template>
 
 <script>
@@ -79,23 +79,17 @@ export default {
 <style scoped>
 #app {
   text-align: center;
-  color: #0B4678; /* Indigo Dye */
-  margin-top: 40px;
-  font-family: 'Roboto', sans-serif;
+  margin-top: 15px;
 }
 
 .main-content {
-  background: #E1D7CD; /* Light Beige */
-  padding: 20px;
   border-radius: 10px;
-  box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
-  max-width: 800px;
-  margin: auto;
+  box-shadow: 0 0 15px rgba(0, 0, 0, 0.35);
+  margin-top: 15px;
 }
 
 .year-births-section {
   background: transparent; /* Retire le fond moche */
-  padding: 15px;
   border-radius: 8px;
   margin-bottom: 20px;
   box-shadow: none !important; /* Supprime toute ombre appliquée */
@@ -106,7 +100,7 @@ export default {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  margin-bottom: 20px;
+  margin-top: 20px;
   background-color: transparent !important; /* Assurez-vous que l'arrière-plan est transparent */
   box-shadow: none !important; /* Supprime toute ombre qui pourrait apparaître */
   border: none !important; /* Supprime toute bordure */
@@ -146,9 +140,9 @@ v-select {
 }
 
 .plot-section {
-  background: #CDC1B5; /* Beige */
   padding: 20px;
   border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.35);
   max-width: 100%;
   overflow-x: auto; /* Assure que le graphique ne déborde pas horizontalement */
 }

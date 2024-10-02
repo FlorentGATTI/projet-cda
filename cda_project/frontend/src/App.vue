@@ -82,7 +82,7 @@ export default {
       { name: "Analyse des prénoms", path: "/name-analysis" },
       { name: "Statistiques globales", path: "/global-stat" },
       { name: "Diversité géographique", path: "/stats-diversity" },
-      { name: "À propos", path: "/contact" },
+      // { name: "À propos", path: "/contact" },
     ];
 
     const shouldShowSidebar = computed(() => {
@@ -232,7 +232,7 @@ main {
 /* Boutons de navigation */
 .nav-btn {
   transition: transform 0.2s, background-color 0.2s, color 0.2s;
-  color: #ffffff;
+  color: transparent;
 }
 
 .nav-btn:hover {
@@ -251,7 +251,7 @@ main {
 .nav-dropdown {
   position: absolute;
   top: 70px;
-  right: 0;
+  right: 15px;
   width: 100%;
   z-index: 99;
   flex-direction: column;

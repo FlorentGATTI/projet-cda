@@ -66,7 +66,7 @@ export default {
 }
 
 .introduction-section {
-  margin-bottom: 60px;
+  margin-bottom: 10px;
 }
 
 .navigation-section {
