@@ -4,15 +4,10 @@
       <v-toolbar-title class="title">
         <img src="@/assets/logoCDA.png" alt="Logo" style="height: 50px" />
       </v-toolbar-title>
-
       <v-spacer></v-spacer>
-
-      <!-- Menu burger pour mobile -->
       <v-btn icon class="d-lg-none" @click="toggleNavbar" :color="navbarOpen ? 'secondary' : 'white'" aria-label="Toggle navigation" :aria-expanded="navbarOpen" aria-controls="nav-dropdown">
         <v-icon>{{ navbarOpen ? "mdi-close" : "mdi-menu" }}</v-icon>
       </v-btn>
-
-      <!-- Boutons de navigation pour desktop -->
       <v-row class="nav-buttons-desktop" align="center" justify="end" v-if="isDesktop">
         <v-btn v-for="link in navLinks" :key="link.path" class="nav-btn nav-btn-spacing" text @click="navigateTo(link.path)">
           {{ link.name }}
@@ -23,7 +18,6 @@
       </v-row>
     </v-app-bar>
 
-    <!-- Menu déroulant central pour le menu burger -->
     <v-expand-transition>
       <div v-if="showNavbar && navbarOpen && !isDesktop" class="nav-dropdown">
         <v-container class="d-flex flex-column align-center justify-center h-100">
@@ -38,8 +32,6 @@
       </div>
     </v-expand-transition>
 
-    <!-- Contenu principal avec sidebar -->
-
     <div @touchstart="startTouch" @touchmove="moveTouch" @touchend="endTouch">
       <v-main :class="{ 'with-sidebar': shouldShowSidebar && sidebarOpen, 'without-sidebar': !shouldShowSidebar || !sidebarOpen }">
         <v-container fluid class="main-container">
@@ -48,18 +40,17 @@
             <router-view :filters="filters" ref="statsDiversityRef" />
           </v-container>
         </v-container>
-      </v-container>
-    </v-main>
+      </v-main>
+    </div>
   </v-app>
 </template>
 
 <script>
-import { ref, computed, onMounted, onBeforeUnmount } from "vue";
+import { ref, computed, onMounted, onBeforeUnmount, watch, nextTick } from "vue";
 import { useRouter, useRoute } from "vue-router";
 import SideBar from "./components/SideBar.vue";
 import debounce from "lodash/debounce";
 import { useSwipe } from "./composables/useSwipe";
-import { nextTick } from "vue";
 
 export default {
   name: "App",
@@ -70,11 +61,12 @@ export default {
 
     const navbarOpen = ref(false);
     const sidebarOpen = ref(false);
-
     const statsDiversityRef = ref(null);
     const sidebarRef = ref(null);
     const sidebarKey = ref(0);
     const isLoggedIn = ref(false);
+    const windowWidth = ref(window.innerWidth);
+    const breakpoint = 1280;
 
     const filters = ref({
       selectedType: "state",
@@ -84,8 +76,6 @@ export default {
       name: null,
     });
 
-    const windowWidth = ref(window.innerWidth);
-    const breakpoint = 1280;
     const isDesktop = computed(() => windowWidth.value >= breakpoint);
 
     const navLinks = [
@@ -93,32 +83,22 @@ export default {
       { name: "Analyse des prénoms", path: "/name-analysis" },
       { name: "Statistiques globales", path: "/global-stat" },
       { name: "Diversité géographique", path: "/stats-diversity" },
-      // { name: "À propos", path: "/contact" },
     ];
 
-    const shouldShowSidebar = computed(() => {
-      return route.path === "/stats-diversity";
-    });
+    const shouldShowSidebar = computed(() => route.path === "/stats-diversity");
+    const showNavbar = computed(() => route.path !== "/login");
 
-    const showNavbar = computed(() => {
-      return route.path !== "/login";
+    const { startTouch, moveTouch, endTouch } = useSwipe({
+      onSwipeLeft: () => {
+        sidebarOpen.value = false;
+      },
+      onSwipeRight: () => {
+        sidebarOpen.value = true;
+      },
     });
 
     const toggleNavbar = () => {
       navbarOpen.value = !navbarOpen.value;
-    };
-
-    const startTouch = (event) => {
-      startX.value = event.touches[0].clientX;
-    };
-
-    const endTouch = (event) => {
-      const endX = event.changedTouches[0].clientX;
-      if (endX - startX.value > 100) {
-        sidebarOpen.value = true;
-      } else if (startX.value - endX > 100) {
-        sidebarOpen.value = false;
-      }
     };
 
     const navigateTo = (path) => {
@@ -135,6 +115,28 @@ export default {
 
     const updateFilters = (newFilters) => {
       filters.value = newFilters;
+      nextTick(() => {
+        console.log("Filtres mis à jour et DOM actualisé");
+      });
+    };
+
+    const resetSidebarFilters = () => {
+      filters.value = {
+        selectedType: "state",
+        selectedValue: null,
+        year: null,
+        sex: null,
+        name: null,
+      };
+      nextTick(() => {
+        if (sidebarRef.value) {
+          sidebarRef.value.resetFilters();
+        }
+      });
+    };
+
+    const handleApplyFilters = (newFilters) => {
+      updateFilters(newFilters);
     };
 
     const logout = () => {
@@ -175,6 +177,7 @@ export default {
       navLinks,
       toggleNavbar,
       startTouch,
+      moveTouch,
       endTouch,
       navigateTo,
       shouldShowSidebar,
@@ -186,13 +189,13 @@ export default {
       sidebarRef,
       sidebarKey,
       showNavbar,
+      updateFilters,
     };
   },
 };
 </script>
 
 <style scoped>
-/* Styles généraux */
 body,
 .v-application,
 main {
@@ -211,7 +214,6 @@ main {
   background-color: #1e1e2f !important;
 }
 
-/* Barre de navigation */
 .v-app-bar {
   background-color: #1976d2 !important;
   padding: 0 30px;
@@ -225,7 +227,6 @@ main {
   z-index: 1000;
 }
 
-/* Menu déroulant */
 .nav-dropdown {
   position: fixed;
   top: 64px;
@@ -254,7 +255,6 @@ main {
   background-color: rgba(255, 255, 255, 0.2);
 }
 
-/* Sidebar desktop */
 .sidebar-desktop {
   position: fixed;
   top: 64px;
@@ -267,13 +267,11 @@ main {
   border-right: 1px solid #e0e0e0;
 }
 
-/* Sidebar mobile */
 .mobile-sidebar {
   z-index: 90;
   background-color: #ffffff;
 }
 
-/* Conteneur principal */
 .v-main {
   display: flex;
   flex-grow: 1;
@@ -292,7 +290,6 @@ main {
   padding: 30px 50px;
 }
 
-/* Conteneur de contenu */
 .content-container {
   flex-grow: 1;
   overflow-y: auto;
@@ -302,7 +299,6 @@ main {
   padding: 20px;
 }
 
-/* Boutons de navigation */
 .nav-btn {
   transition: transform 0.2s, background-color 0.2s, color 0.2s;
   color: #ffffff !important;
@@ -326,7 +322,6 @@ main {
   margin-right: 25px;
 }
 
-/* Animations */
 .slide-left-enter-active,
 .slide-left-leave-active {
   transition: transform 0.3s ease;
@@ -347,7 +342,6 @@ main {
   opacity: 0;
 }
 
-/* Responsivité */
 @media (max-width: 1280px) {
   .v-main {
     margin-left: 0;
