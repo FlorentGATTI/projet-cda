@@ -15,11 +15,12 @@
           <v-card-actions v-if="expandedCard !== index">
             <v-btn color="primary" class="generate-btn">Générer</v-btn>
           </v-card-actions>
-          <div v-if="expandedCard === index" class="plot-container" id="plot-container"></div>
+          <div v-if="expandedCard === index" class="plot-container" :id="`plot-container-${index}`"></div>
           <v-progress-circular v-if="loading && expandedCard === index" :size="50" :width="5" indeterminate color="primary" class="spinner"></v-progress-circular>
         </v-card>
       </v-col>
     </v-row>
+    <div v-if="errorMessage" class="error-message">{{ errorMessage }}</div>
   </v-container>
 </template>
 
@@ -123,10 +124,9 @@ export default {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
         const data = await response.json();
-        if (data.image) {
-          this.plotImage = `data:image/png;base64,${data.image}`;
-        } else if (data.figure) {
-          this.renderPlotlyPlot(JSON.parse(data.figure));
+        if (data.figure) {
+          const figureData = JSON.parse(data.figure);
+          this.renderPlotlyPlot(figureData);
         } else {
           throw new Error("Format de données non reconnu.");
         }
@@ -139,14 +139,22 @@ export default {
     },
 
     renderPlotlyPlot(figureData) {
+      const plotContainer = document.getElementById(`plot-container-${this.expandedCard}`);
+      if (!plotContainer) {
+        console.error('Plot container not found');
+        return;
+      }
+      
       const layout = {
         ...figureData.layout,
-        width: "100%",
+        width: plotContainer.offsetWidth,
         height: 400,
         margin: { l: 50, r: 50, t: 50, b: 50 },
       };
-      Plotly.newPlot("plot-container", figureData.data, layout, { responsive: true });
+      
+      Plotly.newPlot(plotContainer, figureData.data, layout, { responsive: true });
     },
+
     async fetchDiversity() {
       await this.handlePlotRequest(`${API_BASE_URL}/api/plots/diversity`);
     },
