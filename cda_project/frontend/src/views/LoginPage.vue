@@ -1,8 +1,5 @@
 <template>
-  <v-container class="login-container">
-    <v-row align="center" justify="center">
-      <v-col cols="12" md="6">
-        <v-card>
+        <v-card class="login-card">
           <v-card-title class="text-h5">{{ isLogin ? "Connexion" : "Inscription" }}</v-card-title>
           <v-card-text>
             <v-form v-model="isFormValid" ref="form">
@@ -18,7 +15,7 @@
           </v-card-text>
           <v-card-actions>
             <v-spacer></v-spacer>
-            <v-btn color="primary" @click="submit" :disabled="!isFormValid || isLoading">
+            <v-btn @click="submit" :disabled="!isFormValid || isLoading">
               {{ isLogin ? "Connexion" : "Inscription" }}
             </v-btn>
           </v-card-actions>
@@ -29,9 +26,6 @@
             </v-btn>
           </v-card-actions>
         </v-card>
-      </v-col>
-    </v-row>
-  </v-container>
 </template>
 
 <script>
@@ -116,27 +110,44 @@ export default {
 </script>
 
 <style scoped>
+.v-card-title {
+  color: white;
+  text-align: center;
+  margin-bottom: 10px;
+}
+.content-container {
+  padding: 0;
+}
 .v-card-actions{
   display: flex;
   flex-direction: column;
 }
 
+.v-form {
+  color: white !important;
+}
+
+.v-field--active input {
+  color: red;
+}
+
 .v-btn{
+  color: transparent !important;
+  box-shadow: 0 0 15px rgba(0, 0, 0, 0.35);
+  width: 250px;
+}
+.v-btn:hover{
   color: white !important;
 }
 
 .login-card {
   box-shadow: none !important;
   background-color: transparent !important;
-}
 
-.login-title {
-  background-color: transparent;
-  color: #1976d2;
 }
 
 .v-text-field >>> .v-input__slot {
-  background-color: white !important;
+  background-color: transparent !important;
   box-shadow: none !important;
   border: 1px solid #ccc !important;
 }
@@ -147,7 +158,6 @@ export default {
 }
 
 .login-btn {
-  background-color: #1976d2 !important;
   color: white !important;
   font-weight: 500;
   height: 44px;

@@ -2,6 +2,7 @@ from fastapi import APIRouter, HTTPException
 from typing import List
 from app.models.prenoms import NameData
 from app.db import mongodb_client
+from typing import List, Dict 
 import logging
 
 router = APIRouter()
@@ -52,3 +53,46 @@ async def get_all_names():
     except Exception as e:
         logging.error(f"Error fetching all names: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
+# Nouvelle route pour une plage d'années
+@router.get("/total_births_range", response_model=List[Dict[str, int]])
+def get_total_births_range(start_year: int, end_year: int):
+    logging.info(f"Fetching total births between {start_year} and {end_year}")
+    
+    if mongodb_client.db is None:
+        logging.error("Database connection not established")
+        raise HTTPException(status_code=500, detail="Database connection not established")
+
+    if start_year > end_year:
+        logging.error(f"Invalid year range: {start_year} > {end_year}")
+        raise HTTPException(status_code=400, detail="Invalid year range")
+    
+    # Requête MongoDB pour obtenir toutes les années dans la plage
+    births_in_range = list(mongodb_client.db["prenoms"].aggregate([
+        {"$match": {"Year": {"$gte": start_year, "$lte": end_year}}},
+        {
+            "$group": {
+                "_id": "$Year",
+                "total_births": {"$sum": "$Count"},
+                "male_births": {"$sum": {"$cond": [{"$eq": ["$Sex", "M"]}, "$Count", 0]}},
+                "female_births": {"$sum": {"$cond": [{"$eq": ["$Sex", "F"]}, "$Count", 0]}}
+            }
+        },
+        {"$sort": {"_id": 1}}  # Tri par année
+    ]))
+
+    if not births_in_range:
+        logging.warning(f"No data found between {start_year} and {end_year}")
+        raise HTTPException(status_code=404, detail="No data found for the given range")
+
+    # Transformer les résultats en un format plus lisible
+    result = [
+        {
+            "year": item["_id"],
+            "total_births": item["total_births"],
+            "male_births": item["male_births"],
+            "female_births": item["female_births"]
+        }
+    for item in births_in_range]
+
+    return result

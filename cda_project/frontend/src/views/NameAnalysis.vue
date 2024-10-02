@@ -5,35 +5,75 @@
     <div class="main-content">
       <div class="year-births-section">
         <v-container>
+          <p v-if="selectedYearEnd">Nombre total de naissance compris entre {{ selectedYearStart }} et {{ selectedYearEnd }} : {{ formatNumber(calculateTotalBirths()) }}</p>
           <v-row>
+            <!-- Premier v-select pour sélectionner la première année -->
             <v-col cols="12" md="6">
               <div class="year-selector-wrapper">
-                <label for="year">Sélectionnez une année :</label>
+                <label for="year-start">Sélectionnez une année de début :</label>
                 <v-select
-                  id="year"
-                  v-model="selectedYear"
+                  id="year-start"
+                  v-model="selectedYearStart"
                   :items="years"
-                  label="Veuillez sélectionner une année"
+                  label="Veuillez sélectionner une année de début"
                   outlined
                   dense
                   style="width: 100%;"
                 ></v-select>
               </div>
             </v-col>
-            <v-col cols="12" md="6" v-if="totalBirths !== 0">
-              <p>Total des naissances en {{ selectedYear }} : <span>{{ totalBirths }}</span></p>
-              <p>Naissances masculines : <span>{{ birthsBySex?.M || 0 }}</span></p>
-              <p>Naissances féminines : <span>{{ birthsBySex?.F || 0 }}</span></p>
+
+            <!-- Deuxième v-select pour sélectionner la deuxième année -->
+            <v-col cols="12" md="6" v-if="selectedYearStart">
+              <div class="year-selector-wrapper">
+                <label for="year-end">Sélectionnez une année de fin :</label>
+                <v-select
+                  id="year-end"
+                  v-model="selectedYearEnd"
+                  :items="years"
+                  label="Veuillez sélectionner une année de fin"
+                  outlined
+                  dense
+                  style="width: 100%;"
+                ></v-select>
+              </div>
+            </v-col>
+
+            <v-col cols="12" v-if="birthData.length > 0">
+              <div class="births-table-wrapper">
+                <table class="births-table">
+                  <thead>
+                    <tr>
+                      <th>Année</th>
+                      <th>Total des Naissances</th>
+                      <th>Naissances Masculines</th>
+                      <th>Naissances Féminines</th>
+                      <th>% Masculin</th>
+                      <th>% Féminin</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr v-for="data in birthData" :key="data.year">
+                      <td>{{ data.year }}</td>
+                      <td>{{ formatNumber(data.total_births) }}</td>
+                      <td>{{ formatNumber(data.male_births) }}</td>
+                      <td>{{ formatNumber(data.female_births) }}</td>
+                      <td>{{ ((data.male_births / data.total_births) * 100).toFixed(2) }}%</td>
+                      <td>{{ ((data.female_births / data.total_births) * 100).toFixed(2) }}%</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
             </v-col>
           </v-row>
         </v-container>
       </div>
     </div>
 
-      <div class="plot-section">
-        <PlotViewer ref="plotViewer" />
-      </div>
+    <div class="plot-section">
+      <PlotViewer ref="plotViewer" />
     </div>
+  </div>
 </template>
 
 <script>
@@ -42,33 +82,50 @@ import PlotViewer from '../components/PlotViewer.vue';
 export default {
   name: 'NameAnalysis',
   components: {
-    PlotViewer
+    PlotViewer,
   },
   data() {
     return {
       years: Array.from({ length: 2021 - 1880 + 1 }, (v, k) => 1880 + k),
-      selectedYear: null, 
-      totalBirths: 0,
-      birthsBySex: { M: 0, F: 0 },
+      selectedYearStart: null,
+      selectedYearEnd: null,
+      birthData: [],
     };
   },
   watch: {
-    selectedYear() {
+    selectedYearStart() {
       this.fetchTotalBirths();
-    }
+    },
+    selectedYearEnd() {
+      this.fetchTotalBirths();
+    },
   },
   methods: {
     async fetchTotalBirths() {
-  if (!this.selectedYear) return;
-  try {
-    const response = await fetch(`http://127.0.0.1:8000/api/total_births/${this.selectedYear}`);
-    const data = await response.json();
-    this.totalBirths = data.total_births;
-    this.birthsBySex = data.births_by_sex || { M: 0, F: 0 };
-  } catch (error) {
-    console.error('Erreur lors de la récupération du nombre total de naissances :', error);
-  }
-}
+      if (!this.selectedYearStart) return;
+
+      const yearStart = this.selectedYearStart;
+      const yearEnd = this.selectedYearEnd || this.selectedYearStart;
+
+      try {
+        const response = await fetch(
+          `http://127.0.0.1:8000/api/total_births_range?start_year=${yearStart}&end_year=${yearEnd}`
+        );
+        const data = await response.json();
+        this.birthData = data;
+      } catch (error) {
+        console.error(
+          'Erreur lors de la récupération des naissances pour la plage :',
+          error
+        );
+      }
+    },
+    formatNumber(number) {
+      return number.toLocaleString('fr-FR');
+    },
+    calculateTotalBirths() {
+      return this.birthData.reduce((total, data) => total + data.total_births, 0);
+    },
   },
   mounted() {
     this.fetchTotalBirths();
@@ -89,11 +146,11 @@ export default {
 }
 
 .year-births-section {
-  background: transparent; /* Retire le fond moche */
+  background: transparent;
   border-radius: 8px;
   margin-bottom: 20px;
-  box-shadow: none !important; /* Supprime toute ombre appliquée */
-  border: none !important; /* Supprime toute bordure */
+  box-shadow: none !important;
+  border: none !important;
 }
 
 .year-selector-wrapper {
@@ -101,9 +158,9 @@ export default {
   flex-direction: column;
   align-items: flex-start;
   margin-top: 20px;
-  background-color: transparent !important; /* Assurez-vous que l'arrière-plan est transparent */
-  box-shadow: none !important; /* Supprime toute ombre qui pourrait apparaître */
-  border: none !important; /* Supprime toute bordure */
+  background-color: transparent !important;
+  box-shadow: none !important;
+  border: none !important;
 }
 
 .year-selector-wrapper label {
@@ -112,31 +169,46 @@ export default {
 }
 
 v-select {
-  background-color: transparent !important; /* Assurez-vous que le composant n'a pas de fond */
-  box-shadow: none !important; /* Supprime toute ombre appliquée */
-  border: none !important; /* Supprime toute bordure */
-}
-
-.v-input__control {
-  background-color: transparent !important; /* Supprime le fond derrière l'input */
+  background-color: transparent !important;
   box-shadow: none !important;
   border: none !important;
 }
 
-.v-select__slot, .v-select__selections {
-  background-color: transparent !important; /* Supprime le fond à l'intérieur du slot */
+.v-input__control {
+  background-color: transparent !important;
+  box-shadow: none !important;
   border: none !important;
 }
 
-.year-births-section p {
-  font-size: 1.2em;
-  margin: 0;
-  text-align: right;
+.v-select__slot,
+.v-select__selections {
+  background-color: transparent !important;
+  border: none !important;
 }
 
-.year-births-section span {
-  font-weight: bold;
-  color: #6D2E46; /* Dark Pink */
+.births-table-wrapper {
+  margin-top: 20px;
+}
+
+.births-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.births-table th,
+.births-table td {
+  padding: 10px;
+  border: 1px solid #ddd;
+  text-align: center;
+}
+
+.births-table th {
+  background-color: #6D2E46;
+  color: white;
+}
+
+.births-table td {
+  font-size: 1.2em;
 }
 
 .plot-section {
@@ -144,6 +216,6 @@ v-select {
   border-radius: 8px;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.35);
   max-width: 100%;
-  overflow-x: auto; /* Assure que le graphique ne déborde pas horizontalement */
+  overflow-x: auto;
 }
 </style>

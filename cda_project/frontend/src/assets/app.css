@@ -53,6 +53,11 @@ button:hover,
   transition: transform 0.2s, background-color 0.2s;
 }
 
+.v-card {
+  width: 40%;
+  margin: auto;
+}
+
 .secondary-button:hover {
   transform: scale(1.1); /* Légère augmentation de taille au survol */
   background: linear-gradient(0deg, #186d9f, #1e9880); /* Dark Pink */
