@@ -1,6 +1,6 @@
 <template>
   <v-app>
-    <v-app-bar v-if="showNavbar" app color="primary" dark class="elevation-2 artistic-navbar sticky-navbar">
+    <v-app-bar v-if="showNavbar" app class="navbar">
       <v-toolbar-title class="title">
         <img src="@/assets/logoCDA.png" alt="Logo" style="height: 50px" />
       </v-toolbar-title>
@@ -14,7 +14,7 @@
 
       <!-- Boutons de navigation pour desktop -->
       <v-row class="nav-buttons-desktop" align="center" justify="end" v-if="isDesktop">
-        <v-btn v-for="link in navLinks" :key="link.path" class="nav-btn nav-btn-spacing" text @click="navigateTo(link.path)" :class="{ 'active-link': isActiveRoute(link.path) }">
+        <v-btn v-for="link in navLinks" :key="link.path" class="nav-btn nav-btn-spacing" text @click="navigateTo(link.path)">
           {{ link.name }}
         </v-btn>
         <v-btn v-if="loggedIn" class="nav-btn" text @click="logout">
@@ -39,6 +39,7 @@
     </v-expand-transition>
 
     <!-- Contenu principal avec sidebar -->
+
     <div @touchstart="startTouch" @touchmove="moveTouch" @touchend="endTouch">
       <v-main :class="{ 'with-sidebar': shouldShowSidebar && sidebarOpen, 'without-sidebar': !shouldShowSidebar || !sidebarOpen }">
         <v-container fluid class="main-container">
@@ -47,15 +48,14 @@
             <router-view :filters="filters" ref="statsDiversityRef" />
           </v-container>
         </v-container>
-      </v-main>
-    </div>
+      </v-container>
+    </v-main>
   </v-app>
 </template>
 
 <script>
-import { ref, computed, onMounted, onBeforeUnmount, watch } from "vue";
+import { ref, computed, onMounted, onBeforeUnmount } from "vue";
 import { useRouter, useRoute } from "vue-router";
-import { useDisplay } from "vuetify";
 import SideBar from "./components/SideBar.vue";
 import debounce from "lodash/debounce";
 import { useSwipe } from "./composables/useSwipe";
@@ -67,10 +67,10 @@ export default {
   setup() {
     const router = useRouter();
     const route = useRoute();
-    const { lgAndUp } = useDisplay();
 
     const navbarOpen = ref(false);
     const sidebarOpen = ref(false);
+
     const statsDiversityRef = ref(null);
     const sidebarRef = ref(null);
     const sidebarKey = ref(0);
@@ -84,14 +84,16 @@ export default {
       name: null,
     });
 
-    const isDesktop = computed(() => lgAndUp.value);
+    const windowWidth = ref(window.innerWidth);
+    const breakpoint = 1280;
+    const isDesktop = computed(() => windowWidth.value >= breakpoint);
 
     const navLinks = [
       { name: "Accueil", path: "/" },
       { name: "Analyse des prénoms", path: "/name-analysis" },
       { name: "Statistiques globales", path: "/global-stat" },
       { name: "Diversité géographique", path: "/stats-diversity" },
-      { name: "À propos", path: "/contact" },
+      // { name: "À propos", path: "/contact" },
     ];
 
     const shouldShowSidebar = computed(() => {
@@ -103,56 +105,36 @@ export default {
     });
 
     const toggleNavbar = () => {
-      sidebarOpen.value = false;
       navbarOpen.value = !navbarOpen.value;
     };
 
-    const { startTouch, moveTouch, endTouch } = useSwipe({
-      onSwipeRight: () => {
-        if (shouldShowSidebar.value && !sidebarOpen.value) {
-          sidebarOpen.value = true;
-        }
-      },
-      onSwipeLeft: () => {
-        if (shouldShowSidebar.value && sidebarOpen.value) {
-          sidebarOpen.value = false;
-        }
-      },
-    });
+    const startTouch = (event) => {
+      startX.value = event.touches[0].clientX;
+    };
+
+    const endTouch = (event) => {
+      const endX = event.changedTouches[0].clientX;
+      if (endX - startX.value > 100) {
+        sidebarOpen.value = true;
+      } else if (startX.value - endX > 100) {
+        sidebarOpen.value = false;
+      }
+    };
 
     const navigateTo = (path) => {
       router.push(path);
       navbarOpen.value = false;
-      if (path !== "/stats-diversity") {
-        sidebarOpen.value = false;
-      }
-    };
-
-    const isActiveRoute = (path) => {
-      return route.path === path;
     };
 
     const handleResize = debounce(() => {
+      windowWidth.value = window.innerWidth;
       if (isDesktop.value) {
         navbarOpen.value = false;
-        sidebarOpen.value = false;
       }
     }, 100);
 
-    const resetSidebarFilters = () => {
-      sidebarKey.value += 1;
-      if (sidebarRef.value) {
-        sidebarRef.value.resetFilters();
-      }
-    };
-
-    const handleApplyFilters = (appliedFilters) => {
-      filters.value = { ...filters.value, ...appliedFilters };
-      if (statsDiversityRef.value && statsDiversityRef.value.fetchAndDisplayData) {
-        nextTick(() => {
-          statsDiversityRef.value.fetchAndDisplayData();
-        });
-      }
+    const updateFilters = (newFilters) => {
+      filters.value = newFilters;
     };
 
     const logout = () => {
@@ -193,10 +175,8 @@ export default {
       navLinks,
       toggleNavbar,
       startTouch,
-      moveTouch,
       endTouch,
       navigateTo,
-      isActiveRoute,
       shouldShowSidebar,
       filters,
       loggedIn: isLoggedIn,
@@ -216,15 +196,24 @@ export default {
 body,
 .v-application,
 main {
-  background-color: #f5f5f5;
-  color: #2c3e50;
+  background-color: #1e1e2f;
+  color: #9a9a9a;
   font-family: "Arial", sans-serif;
   overflow-x: hidden;
 }
 
+.main-title {
+  color: #9a9a9a;
+  font-size: 3em;
+}
+
+.v-toolbar {
+  background-color: #1e1e2f !important;
+}
+
 /* Barre de navigation */
 .v-app-bar {
-  background-color: #1976d2 !important; /* Retour au bleu */
+  background-color: #1976d2 !important;
   padding: 0 30px;
 }
 
@@ -243,7 +232,7 @@ main {
   left: 0;
   width: 100%;
   height: calc(100vh - 64px);
-  background-color: rgba(25, 118, 210, 0.95); /* Bleu avec transparence */
+  background-color: rgba(25, 118, 210, 0.95);
   z-index: 999;
   display: flex;
   flex-direction: column;
@@ -265,23 +254,23 @@ main {
   background-color: rgba(255, 255, 255, 0.2);
 }
 
-/* Sidebar */
+/* Sidebar desktop */
 .sidebar-desktop {
   position: fixed;
   top: 64px;
   bottom: 0;
-  left: -250px;
+  left: 0;
   width: 250px;
   background-color: #ffffff;
   padding: 20px;
   box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
   border-right: 1px solid #e0e0e0;
-  transition: transform 0.3s ease-in-out;
-  z-index: 98;
 }
 
-.sidebar-open {
-  transform: translateX(250px);
+/* Sidebar mobile */
+.mobile-sidebar {
+  z-index: 90;
+  background-color: #ffffff;
 }
 
 /* Conteneur principal */
@@ -292,7 +281,6 @@ main {
   padding: 30px;
   box-sizing: border-box;
   overflow: auto;
-  transition: margin-left 0.3s ease-in-out;
 }
 
 .with-sidebar {
@@ -304,15 +292,24 @@ main {
   padding: 30px 50px;
 }
 
+/* Conteneur de contenu */
+.content-container {
+  flex-grow: 1;
+  overflow-y: auto;
+  background-color: #27293d;
+  border-radius: 8px;
+  box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.05);
+  padding: 20px;
+}
+
 /* Boutons de navigation */
 .nav-btn {
+  transition: transform 0.2s, background-color 0.2s, color 0.2s;
   color: #ffffff !important;
   font-weight: 600;
   padding: 5px 15px;
-  background: linear-gradient(45deg, #1976d2, #1565c0); /* Dégradé de bleu */
+  background: linear-gradient(45deg, #1976d2, #1565c0);
   min-width: 0;
-  transition: transform 0.2s, background-color 0.2s;
-  right: 15px;
 }
 
 .nav-btn:hover,
@@ -325,8 +322,33 @@ main {
   margin-right: 10px;
 }
 
+.nav-buttons-desktop .v-btn:last-child {
+  margin-right: 25px;
+}
+
+/* Animations */
+.slide-left-enter-active,
+.slide-left-leave-active {
+  transition: transform 0.3s ease;
+}
+
+.slide-left-enter,
+.slide-left-leave-to {
+  transform: translateX(-100%);
+}
+
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.5s;
+}
+
+.fade-enter,
+.fade-leave-to {
+  opacity: 0;
+}
+
 /* Responsivité */
-@media (max-width: 1420px) {
+@media (max-width: 1280px) {
   .v-main {
     margin-left: 0;
     padding: 20px;
@@ -339,9 +361,7 @@ main {
   .with-sidebar .sidebar-desktop {
     transform: translateX(0);
   }
-}
 
-@media (max-width: 1280px) {
   .nav-buttons-desktop {
     display: none;
   }

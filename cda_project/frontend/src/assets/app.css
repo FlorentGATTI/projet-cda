@@ -1,14 +1,5 @@
 /* Styles globaux pour l'application */
 
-/* Couleur de fond de l'application */
-body,
-.v-application,
-main {
-  background-color: #e1d7cd;
-  color: #2c3e50; /* Couleur de texte par défaut */
-  font-family: "Arial", sans-serif;
-}
-
 /* Styles pour les titres */
 h1,
 h2,
@@ -16,7 +7,7 @@ h3,
 h4,
 h5,
 h6 {
-  color: #1976d2; /* Couleur primaire pour les titres */
+  color: #fff; /* Couleur primaire pour les titres */
   font-family: "Arial", sans-serif;
 }
 
@@ -33,32 +24,39 @@ a:hover {
 /* Boutons standards */
 button,
 .v-btn {
-  background-color: #1976d2; /* Couleur primaire */
-  color: white;
   font-family: "Arial", sans-serif;
   border: none;
   border-radius: 5px;
-  padding: 10px 20px;
+  padding: 5px 10px;
   cursor: pointer;
-  transition: background-color 0.3s;
+}
+
+.v-btn__content {
+  background: linear-gradient(0deg, #0098f0, #00f2c3);
+  -webkit-background-clip : text;
 }
 
 button:hover,
 .v-btn:hover {
-  background-color: #135ba1; /* Couleur primaire foncée pour l'effet hover */
+  background-color: #27293d; /* Couleur primaire foncée pour l'effet hover */
 }
 
-/* Boutons secondaires */
-button.secondary,
-.v-btn.secondary {
-  background-color: #a26769; /* Couleur secondaire */
+.secondary-button {
+  background: linear-gradient(0deg, #0098f0, #00f2c3);
+  color: white;
+  border: none;
+  padding: 10px 15px;
+  margin: 5px;
+  cursor: pointer;
+  font-size: 0.9em;
+  border-radius: 5px;
+  transition: transform 0.2s, background-color 0.2s;
 }
 
-button.secondary:hover,
-.v-btn.secondary:hover {
-  background-color: #854d51; /* Couleur secondaire foncée pour l'effet hover */
+.secondary-button:hover {
+  transform: scale(1.1); /* Légère augmentation de taille au survol */
+  background: linear-gradient(0deg, #186d9f, #1e9880); /* Dark Pink */
 }
-
 /* Styles pour les champs de formulaire */
 input,
 select {
@@ -114,6 +112,10 @@ select {
   max-width: 1200px;
   margin: 0 auto;
   padding: 20px;
+}
+
+.v-col {
+  padding: 0;
 }
 
 /* Footer (pied de page) */

@@ -1,6 +1,6 @@
 <template>
   <v-container fluid>
-    <h2>Statistiques Globales des Prénoms</h2>
+    <h1 class="text-center main-title">Statistiques Globales</h1>
 
     <!-- Year Selection -->
     <v-select
@@ -40,7 +40,12 @@
 
     <!-- Placeholder pour les graphiques interactifs -->
     <div class="graph-container">
-      <div id="plotly-chart" ref="plotlyChart" class="graph-placeholder"></div>
+      <!-- Placeholder pour un graphique -->
+      <div>
+        <div class="plot-container" v-if="!loading">
+          <img :src="plotImage" alt="Generated Plot" v-if="plotImage && !errorMessage" />
+        </div>
+      </div>
     </div>
 
     <!-- Affichage des messages d'erreur -->
@@ -258,23 +263,11 @@ export default {
 }
 
 .buttons {
-  margin: 20px 0;
-}
-
-.secondary-button {
-  background-color: #a26769; /* Brun-rosé */
-  color: white;
-  border: none;
-  padding: 10px 15px;
-  margin: 5px;
-  cursor: pointer;
-  font-size: 0.9em;
-  border-radius: 5px;
-  transition: background-color 0.3s ease;
-}
-
-.secondary-button:hover {
-  background-color: #6d2e46; /* Dark Pink */
+  margin-top: 20px;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
 }
 
 .primary-button {

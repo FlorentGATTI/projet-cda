@@ -316,9 +316,10 @@ export default {
 
 <style scoped>
 .sidebar-container {
-  background: #e1d7cd;
+  background: linear-gradient(#27293d, #1d1d1d);
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
+  color: #fff;
 }
 
 .sidebar-mobile {
@@ -418,6 +419,10 @@ export default {
 :deep(.v-field:hover),
 :deep(.v-field--focused) {
   background-color: rgba(0, 0, 0, 0.03) !important;
+}
+
+button:hover, .v-btn:hover {
+    background-color: #9c9c9c;
 }
 
 :deep(.v-field),
