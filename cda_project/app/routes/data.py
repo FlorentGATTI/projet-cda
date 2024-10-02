@@ -1,7 +1,7 @@
+import logging
 from fastapi import APIRouter, HTTPException
 from app.models.data import TotalBirths
 from app.db import mongodb_client
-import logging
 
 router = APIRouter()
 

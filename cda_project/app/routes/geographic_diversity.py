@@ -1,7 +1,7 @@
+import logging
 from fastapi import APIRouter, HTTPException, Query
 from typing import List, Optional
 from pymongo import MongoClient
-import logging
 from app.models.geographic_diversity import NameDataByState, NameDataByTerritory
 
 router = APIRouter()

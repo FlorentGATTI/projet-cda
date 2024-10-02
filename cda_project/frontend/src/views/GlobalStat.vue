@@ -1,36 +1,25 @@
 <template>
   <v-container fluid>
     <h1 class="text-center main-title">Statistiques Globales</h1>
-    
-    <div class="buttons">
-      <button @click="fetchDiversity" class="secondary-button">Générer un graphique de diversité</button>
-      <button @click="fetchNameLength" class="secondary-button">Générer un tracé de longueur de nom</button>
-      <button @click="fetchDecadeAnalysis" class="secondary-button">Générer une analyse par décennie</button>
-      <button @click="fetchGeographicDiversity" class="secondary-button">Générer une analyse de diversité géographique</button>
-      <button @click="fetchCompoundNames" class="secondary-button">Générer une analyse des prénoms composés</button>
-    </div>
 
-    <div v-if="totalBirths !== 0" class="total-births-section">
-      <p>
-        Total des naissances en {{ selectedYear }} : <span>{{ totalBirths }}</span>
-      </p>
-      <p>
-        Naissances masculines : <span>{{ birthsBySex?.M || 0 }}</span>
-      </p>
-      <p>
-        Naissances féminines : <span>{{ birthsBySex?.F || 0 }}</span>
-      </p>
-    </div>
-
-    <div class="graph-container">
-      <div class="plot-container" v-if="!loading">
-        <img :src="plotImage" alt="Generated Plot" v-if="plotImage && !errorMessage" />
-      </div>
-    </div>
-
-    <div v-if="errorMessage" class="error-message">{{ errorMessage }}</div>
-
-    <v-progress-circular v-if="loading" :size="70" :width="7" indeterminate color="primary" class="spinner"></v-progress-circular>
+    <v-row>
+      <v-col v-for="(analysis, index) in analyses" :key="index" :cols="12" :md="expandedCard === index ? 12 : 6" :lg="expandedCard === index ? 12 : 6">
+        <v-card class="analysis-card" :class="{ 'expanded-card': expandedCard === index }" @click="expandCard(index)">
+          <v-card-title class="card-title">
+            <v-icon class="card-icon">{{ analysis.icon }}</v-icon>
+            {{ analysis.title }}
+          </v-card-title>
+          <v-card-text class="card-text">
+            {{ analysis.description }}
+          </v-card-text>
+          <v-card-actions v-if="expandedCard !== index">
+            <v-btn color="primary" class="generate-btn">Générer</v-btn>
+          </v-card-actions>
+          <div v-if="expandedCard === index" class="plot-container" id="plot-container"></div>
+          <v-progress-circular v-if="loading && expandedCard === index" :size="50" :width="5" indeterminate color="primary" class="spinner"></v-progress-circular>
+        </v-card>
+      </v-col>
+    </v-row>
   </v-container>
 </template>
 
@@ -43,6 +32,38 @@ export default {
   name: "GlobalStat",
   data() {
     return {
+      analyses: [
+        {
+          title: "Graphique de Diversité",
+          description: "Analysez la diversité des prénoms au cours des années.",
+          icon: "mdi-chart-bar",
+          fetchMethod: "fetchDiversity",
+        },
+        {
+          title: "Tracé de Longueur de Nom",
+          description: "Visualisez la longueur des prénoms à travers différentes périodes.",
+          icon: "mdi-ruler",
+          fetchMethod: "fetchNameLength",
+        },
+        {
+          title: "Analyse par Décennie",
+          description: "Obtenez une analyse des prénoms par décennie.",
+          icon: "mdi-calendar-clock",
+          fetchMethod: "fetchDecadeAnalysis",
+        },
+        {
+          title: "Analyse de Diversité Géographique",
+          description: "Analysez la diversité des prénoms selon les régions.",
+          icon: "mdi-map",
+          fetchMethod: "fetchGeographicDiversity",
+        },
+        {
+          title: "Analyse des Prénoms Composés",
+          description: "Analysez les prénoms composés les plus populaires.",
+          icon: "mdi-account-multiple",
+          fetchMethod: "fetchCompoundNames",
+        },
+      ],
       selectedYear: null,
       years: Array.from({ length: 2021 - 1880 + 1 }, (v, k) => 1880 + k),
       totalBirths: 0,
@@ -50,6 +71,7 @@ export default {
       errorMessage: "",
       loading: false,
       plotImage: null,
+      expandedCard: null,
     };
   },
   watch: {
@@ -58,6 +80,16 @@ export default {
     },
   },
   methods: {
+    expandCard(index) {
+      if (this.expandedCard === index) {
+        this.expandedCard = null;
+        this.plotImage = null;
+      } else {
+        this.expandedCard = index;
+        this[this.analyses[index].fetchMethod]();
+      }
+    },
+
     async fetchTotalBirths() {
       if (!this.selectedYear) return;
       this.loading = true;
@@ -82,38 +114,11 @@ export default {
       }
     },
 
-    async fetchYearlyBirths() {
-      await this.handlePlotRequest(`${API_BASE_URL}/api/plots/yearly_births`);
-    },
-
-    async fetchDiversity() {
-      await this.handlePlotRequest(`${API_BASE_URL}/api/plots/diversity`);
-    },
-
-    async fetchNameLength() {
-      await this.handlePlotRequest(`${API_BASE_URL}/api/plots/name_length`);
-    },
-
-    async fetchDecadeAnalysis() {
-      await this.handlePlotRequest(`${API_BASE_URL}/api/plots/decade_analysis`);
-    },
-
-    async fetchGeographicDiversity() {
-      await this.handlePlotRequest(`${API_BASE_URL}/api/plots/geographic_diversity`);
-    },
-
-    async fetchCompoundNames() {
-      await this.handlePlotRequest(`${API_BASE_URL}/api/plots/compound_names`);
-    },
-
     async handlePlotRequest(url) {
       this.errorMessage = "";
       this.loading = true;
       try {
-        const queryParams = new URLSearchParams();
-        if (this.selectedYear) queryParams.append("year", this.selectedYear);
-
-        const response = await fetch(`${url}?${queryParams.toString()}`);
+        const response = await fetch(url);
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
@@ -134,19 +139,32 @@ export default {
     },
 
     renderPlotlyPlot(figureData) {
-      const plotlyChart = this.$refs.plotlyChart;
-      if (plotlyChart) {
-        const layout = {
-          ...figureData.layout,
-          width: plotlyChart.offsetWidth,
-          height: 500,
-          margin: { l: 50, r: 50, t: 50, b: 50 },
-        };
-        Plotly.newPlot(plotlyChart, figureData.data, layout, { responsive: true });
-      } else {
-        console.error("Plot container not found");
-        this.errorMessage = "Erreur lors de l'affichage du graphique.";
-      }
+      const layout = {
+        ...figureData.layout,
+        width: "100%",
+        height: 400,
+        margin: { l: 50, r: 50, t: 50, b: 50 },
+      };
+      Plotly.newPlot("plot-container", figureData.data, layout, { responsive: true });
+    },
+    async fetchDiversity() {
+      await this.handlePlotRequest(`${API_BASE_URL}/api/plots/diversity`);
+    },
+
+    async fetchNameLength() {
+      await this.handlePlotRequest(`${API_BASE_URL}/api/plots/name_length`);
+    },
+
+    async fetchDecadeAnalysis() {
+      await this.handlePlotRequest(`${API_BASE_URL}/api/plots/decade_analysis`);
+    },
+
+    async fetchGeographicDiversity() {
+      await this.handlePlotRequest(`${API_BASE_URL}/api/plots/geographic_diversity`);
+    },
+
+    async fetchCompoundNames() {
+      await this.handlePlotRequest(`${API_BASE_URL}/api/plots/compound_names`);
     },
   },
   mounted() {
@@ -156,27 +174,60 @@ export default {
 </script>
 
 <style scoped>
-.graph-container {
-  margin-top: 20px;
+.analysis-card {
+  margin: 20px;
+  padding: 15px;
+  transition: box-shadow 0.3s, transform 0.3s, all 0.5s ease-in-out;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  border-radius: 10px;
+  cursor: pointer;
+  min-width: 450px;
+  min-height: 220px;
+  height: 200px;
 }
 
-.buttons {
-  margin-top: 20px;
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 10px;
+.analysis-card.expanded-card {
+  transform: scale(1.05);
+  padding: 25px;
+  height: auto;
 }
 
-.error-message {
-  color: #a26769;
-  margin-top: 20px;
+.card-title {
+  font-size: 1.4em;
   font-weight: bold;
+  color: #333;
+  display: flex;
+  align-items: center;
+}
+
+.card-icon {
+  margin-right: 10px;
+  font-size: 2em;
+  color: #004ba0;
+}
+
+.card-text {
+  font-size: 1em;
+  color: #555;
+}
+
+.generate-btn {
+  width: 100%;
+  text-transform: uppercase;
+  font-weight: bold;
+  transition: background-color 0.3s, transform 0.3s;
+  border-radius: 8px;
+}
+
+.generate-btn:hover {
+  background-color: #004ba0;
+  transform: scale(1.05);
 }
 
 .plot-container {
   max-width: 100%;
   height: auto;
+  margin-top: 20px;
   display: flex;
   justify-content: center;
 }
@@ -189,15 +240,12 @@ export default {
 
 .spinner {
   margin-top: 20px;
-}
-
-.year-select {
-  width: 300px;
-  margin-bottom: 20px;
+  display: flex;
+  justify-content: center;
 }
 
 .total-births-section {
-  margin-top: 20px;
+  margin-top: 30px;
   text-align: right;
 }
 
@@ -209,5 +257,12 @@ export default {
 .total-births-section span {
   font-weight: bold;
   color: #6d2e46;
+}
+
+.error-message {
+  color: #ff6f61;
+  margin-top: 20px;
+  font-weight: bold;
+  text-align: center;
 }
 </style>

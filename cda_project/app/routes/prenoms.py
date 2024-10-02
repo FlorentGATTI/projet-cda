@@ -35,23 +35,21 @@ def get_top_names(year: int):
     return names_with_counts
 
 @router.get("/names", response_model=List[str])
-async def get_all_names():
+async def get_filtered_names(query: str = ""):
     try:
         if mongodb_client.db is None:
             logging.error("Database connection not established")
             raise HTTPException(status_code=500, detail="Database connection not established")
         
-        logging.info("Fetching all names from the database")
-        all_names = mongodb_client.db["prenoms"].distinct("Name")  # Utilisation de distinct pour obtenir tous les noms uniques
-        logging.info(f"Found {len(all_names)} unique names")
+        logging.info(f"Fetching names from the database with query: {query}")
+        # Rechercher les prénoms correspondant à la requête, avec une limite de résultats
+        all_names = mongodb_client.db["prenoms"].find({"Name": {"$regex": f"^{query}", "$options": "i"}}).limit(50)
+        name_list = [name["Name"] for name in all_names]
         
-        if not all_names:
-            logging.warning("No names found in the database")
-            raise HTTPException(status_code=404, detail="No names found")
-        
-        return sorted(all_names)  # Retourne les noms triés par ordre alphabétique
+        logging.info(f"Found {len(name_list)} names matching query: {query}")
+        return sorted(name_list)  # Retourne les noms triés par ordre alphabétique
     except Exception as e:
-        logging.error(f"Error fetching all names: {e}")
+        logging.error(f"Error fetching names: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 # Nouvelle route pour une plage d'années

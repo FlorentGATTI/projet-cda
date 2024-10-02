@@ -31,6 +31,7 @@ class MongoDBClient:
             self.db = self.client["cda"]
             collections = self.db.list_collection_names()
             logging.info(f"Connected to 'cda' database. Collections: {collections}")
+            # Assurez-vous d'appeler cette fonction au démarrage de votre application
         except Exception as e:
             logging.error(f"Failed to start MongoDB client: {e}")
             self.client = None

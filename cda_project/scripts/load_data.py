@@ -87,7 +87,7 @@ def load_names_by_territory_data(data_dir):
     
     data_list = []
     for file in territory_files:
-        if file.endswith('.txt'):  # Only process .txt files
+        if file.endswith('.txt'): 
             file_path = os.path.join(data_dir, file)
             df = pd.read_csv(file_path, names=['Territory', 'Sex', 'Year', 'Name', 'Count'])
             data_list.append(df)
