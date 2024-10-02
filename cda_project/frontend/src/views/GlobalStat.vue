@@ -1,7 +1,7 @@
 <template>
   <v-container fluid>
     <h2>Statistiques Globales des Prénoms</h2>
-    
+
     <!-- Year Selection -->
     <v-select
       v-model="selectedYear"
@@ -13,6 +13,8 @@
       placeholder="Recherchez ou sélectionnez une année"
       searchable
     ></v-select>
+    <!-- <v-btn @click="generateYearlyBirthsGraph" class="primary-button">Générer le graphique</v-btn> -->
+
 
     <!-- Boutons pour d'autres analyses -->
     <div class="buttons">
@@ -25,9 +27,15 @@
 
     <!-- Display total births -->
     <div v-if="totalBirths !== 0" class="total-births-section">
-      <p>Total des naissances en {{ selectedYear }} : <span>{{ totalBirths }}</span></p>
-      <p>Naissances masculines : <span>{{ birthsBySex?.M || 0 }}</span></p>
-      <p>Naissances féminines : <span>{{ birthsBySex?.F || 0 }}</span></p>
+      <p>
+        Total des naissances en {{ selectedYear }} : <span>{{ totalBirths }}</span>
+      </p>
+      <p>
+        Naissances masculines : <span>{{ birthsBySex?.M || 0 }}</span>
+      </p>
+      <p>
+        Naissances féminines : <span>{{ birthsBySex?.F || 0 }}</span>
+      </p>
     </div>
 
     <!-- Placeholder pour les graphiques interactifs -->
@@ -39,14 +47,7 @@
     <div v-if="errorMessage" class="error-message">{{ errorMessage }}</div>
 
     <!-- Spinner de chargement -->
-    <v-progress-circular
-      v-if="loading"
-      :size="70"
-      :width="7"
-      indeterminate
-      color="primary"
-      class="spinner"
-    ></v-progress-circular>
+    <v-progress-circular v-if="loading" :size="70" :width="7" indeterminate color="primary" class="spinner"></v-progress-circular>
   </v-container>
 </template>
 
@@ -56,7 +57,7 @@ import Plotly from 'plotly.js-dist'
 const API_BASE_URL = 'http://localhost:8000';
 
 export default {
-  name: 'GlobalStat',
+  name: "GlobalStat",
   data() {
     return {
       selectedYear: null,
@@ -70,7 +71,7 @@ export default {
   watch: {
     selectedYear() {
       this.fetchTotalBirths();
-    }
+    },
   },
   methods: {
     async fetchTotalBirths() {
@@ -79,6 +80,20 @@ export default {
       this.errorMessage = "";
       try {
         const response = await fetch(`${API_BASE_URL}/api/total_births/${this.selectedYear}`);
+    // Méthode placeholder pour charger les données
+    loadChartData() {
+      console.log("Chargement des données pour les graphiques");
+      // Logique pour charger les données (à remplir avec Plotly plus tard)
+    },
+
+    // Méthode pour récupérer le nombre total de naissances
+    async fetchTotalBirths() {
+      if (!this.selectedYear) return;
+      this.errorMessage = "";
+      try {
+        const response = await fetch(`http://localhost:8000/api/total_births/${this.selectedYear}`, {
+          credentials: "include",
+        });
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
@@ -86,8 +101,28 @@ export default {
         this.totalBirths = data.total_births;
         this.birthsBySex = data.births_by_sex || { M: 0, F: 0 };
       } catch (error) {
-        console.error('Erreur lors de la récupération du nombre total de naissances :', error);
-        this.errorMessage = "Erreur lors de la récupération des données de naissance.";
+          console.error("Erreur lors de la récupération du nombre total de naissances :", error);
+        this.errorMessage = `Erreur lors de la récupération des données : ${error.message}`;
+        this.totalBirths = 0;
+        this.birthsBySex = { M: 0, F: 0 };
+      }
+    },
+
+    // Méthode pour générer le graphique de naissances par année
+    async fetchYearlyBirths() {
+      this.errorMessage = "";
+      this.loading = true; // Démarre le spinner de chargement
+      try {
+        const response = await fetch("http://localhost:8000/api/plots/yearly_births");
+        const data = await response.json();
+        if (response.ok) {
+          console.log("Graph data fetched successfully:", data);
+          this.renderPlot(data.image);
+        } else {
+          throw new Error(data.detail || "Erreur inconnue lors de la génération du graphique.");
+        }
+      } catch (error) {
+        this.errorMessage = error.message;
       } finally {
         this.loading = false;
       }
@@ -170,6 +205,18 @@ export default {
       } else {
         console.error('Plot container not found');
         this.errorMessage = "Erreur lors de l'affichage du graphique.";
+    // Méthode pour afficher le graphique avec Plotly
+    renderPlot(imageBase64) {
+      const plotContainer = document.getElementById("yearly-births-plot");
+      if (plotContainer) {
+        console.log("Rendering plot in container:", plotContainer);
+        const img = new Image();
+        img.src = `data:image/png;base64,${imageBase64}`;
+        img.alt = "Generated Plot";
+        plotContainer.innerHTML = ""; // Clear previous content
+        plotContainer.appendChild(img);
+      } else {
+        console.error("Plot container not found");
       }
     },
 
@@ -187,6 +234,7 @@ export default {
         console.error('Plot container not found');
         this.errorMessage = "Erreur lors de l'affichage du graphique.";
       }
+      await this.fetchYearlyBirths();
     },
   },
   mounted() {
@@ -285,6 +333,6 @@ export default {
 
 .total-births-section span {
   font-weight: bold;
-  color: #6D2E46; /* Dark Pink */
+  color: #6d2e46; /* Dark Pink */
 }
 </style>

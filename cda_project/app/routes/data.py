@@ -9,7 +9,7 @@ router = APIRouter()
 def get_total_births(year: int):
     logging.info("Received request for total births")
     logging.info(f"Current state of mongodb in route: {mongodb_client.db}")
-    if not mongodb_client.db:
+    if mongodb_client.db is None:
         logging.error("Database connection not established")
         raise HTTPException(status_code=500, detail="Database connection not established")
     
@@ -37,7 +37,7 @@ def get_total_births(year: int):
 @router.get("/births_by_sex/{year}")
 def get_births_by_sex(year: int):
     try:
-        if not mongodb_client.db:
+        if mongodb_client.db is None:
             logging.error("Database connection not established")
             raise HTTPException(status_code=500, detail="Database connection not established")
         

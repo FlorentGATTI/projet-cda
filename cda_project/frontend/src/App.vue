@@ -1,7 +1,6 @@
 <template>
-  <v-app @touchstart="startTouch" @touchend="endTouch">
-    <!-- Navbar -->
-    <v-app-bar app color="primary" dark class="elevation-2 artistic-navbar sticky-navbar">
+  <v-app>
+    <v-app-bar v-if="showNavbar" app color="primary" dark class="elevation-2 artistic-navbar sticky-navbar">
       <v-toolbar-title class="title">
         <img src="@/assets/logoCDA.png" alt="Logo" style="height: 50px" />
       </v-toolbar-title>
@@ -10,46 +9,57 @@
 
       <!-- Menu burger pour mobile -->
       <v-btn icon class="d-lg-none" @click="toggleNavbar" :color="navbarOpen ? 'secondary' : 'white'" aria-label="Toggle navigation" :aria-expanded="navbarOpen" aria-controls="nav-dropdown">
-        <v-icon>mdi-menu</v-icon>
+        <v-icon>{{ navbarOpen ? "mdi-close" : "mdi-menu" }}</v-icon>
       </v-btn>
 
-      <!-- Desktop Navigation Links -->
+      <!-- Boutons de navigation pour desktop -->
       <v-row class="nav-buttons-desktop" align="center" justify="end" v-if="isDesktop">
-        <v-btn v-for="link in navLinks" :key="link.path" class="nav-btn nav-btn-spacing" text @click="navigateTo(link.path)">
+        <v-btn v-for="link in navLinks" :key="link.path" class="nav-btn nav-btn-spacing" text @click="navigateTo(link.path)" :class="{ 'active-link': isActiveRoute(link.path) }">
           {{ link.name }}
+        </v-btn>
+        <v-btn v-if="loggedIn" class="nav-btn" text @click="logout">
+          <v-icon>mdi-logout</v-icon>
         </v-btn>
       </v-row>
     </v-app-bar>
 
-    <!-- Menu déroulant pour le menu burger -->
-    <transition name="fade">
-      <v-row v-if="navbarOpen && !isDesktop" id="nav-dropdown" class="nav-dropdown" align="center" justify="center">
-        <v-btn v-for="link in navLinks" :key="link.path" class="nav-btn-dropdown" text @click="navigateTo(link.path)">
-          {{ link.name }}
-        </v-btn>
-      </v-row>
-    </transition>
+    <!-- Menu déroulant central pour le menu burger -->
+    <v-expand-transition>
+      <div v-if="showNavbar && navbarOpen && !isDesktop" class="nav-dropdown">
+        <v-container class="d-flex flex-column align-center justify-center h-100">
+          <v-btn v-for="link in navLinks" :key="link.path" class="nav-btn-dropdown mb-2" text @click="navigateTo(link.path)">
+            {{ link.name }}
+          </v-btn>
+          <v-btn v-if="loggedIn" class="nav-btn-dropdown" text @click="logout">
+            <v-icon left>mdi-logout</v-icon>
+            Déconnexion
+          </v-btn>
+        </v-container>
+      </div>
+    </v-expand-transition>
 
     <!-- Contenu principal avec sidebar -->
-    <v-main :class="shouldShowSidebar ? 'with-sidebar' : 'without-sidebar'">
-      <v-container fluid class="main-container">
-        <!-- Sidebar (affichée uniquement pour certaines pages) -->
-        <SideBar v-if="shouldShowSidebar" class="sidebar-desktop" @filters-applied="updateFilters" />
-
-        <!-- Page Content -->
-        <v-container fluid class="content-container">
-          <router-view :filters="filters" />
+    <div @touchstart="startTouch" @touchmove="moveTouch" @touchend="endTouch">
+      <v-main :class="{ 'with-sidebar': shouldShowSidebar && sidebarOpen, 'without-sidebar': !shouldShowSidebar || !sidebarOpen }">
+        <v-container fluid class="main-container">
+          <SideBar v-if="shouldShowSidebar" :class="['sidebar-desktop', { 'sidebar-open': sidebarOpen }]" @apply-filters="handleApplyFilters" :key="sidebarKey" ref="sidebarRef" />
+          <v-container fluid class="content-container">
+            <router-view :filters="filters" ref="statsDiversityRef" />
+          </v-container>
         </v-container>
-      </v-container>
-    </v-main>
+      </v-main>
+    </div>
   </v-app>
 </template>
 
 <script>
-import { ref, computed, onMounted, onBeforeUnmount } from "vue";
+import { ref, computed, onMounted, onBeforeUnmount, watch } from "vue";
 import { useRouter, useRoute } from "vue-router";
+import { useDisplay } from "vuetify";
 import SideBar from "./components/SideBar.vue";
-import { debounce } from "lodash"; // Import lodash debounce function
+import debounce from "lodash/debounce";
+import { useSwipe } from "./composables/useSwipe";
+import { nextTick } from "vue";
 
 export default {
   name: "App",
@@ -57,16 +67,24 @@ export default {
   setup() {
     const router = useRouter();
     const route = useRoute();
+    const { lgAndUp } = useDisplay();
 
     const navbarOpen = ref(false);
     const sidebarOpen = ref(false);
-    const startX = ref(0);
+    const statsDiversityRef = ref(null);
+    const sidebarRef = ref(null);
+    const sidebarKey = ref(0);
+    const isLoggedIn = ref(false);
 
-    const filters = ref({ name: "", sexe: "", year: null });
+    const filters = ref({
+      selectedType: "state",
+      selectedValue: null,
+      year: null,
+      sex: null,
+      name: null,
+    });
 
-    const windowWidth = ref(window.innerWidth);
-    const breakpoint = 1280;
-    const isDesktop = computed(() => windowWidth.value >= breakpoint);
+    const isDesktop = computed(() => lgAndUp.value);
 
     const navLinks = [
       { name: "Accueil", path: "/" },
@@ -80,45 +98,91 @@ export default {
       return route.path === "/stats-diversity";
     });
 
+    const showNavbar = computed(() => {
+      return route.path !== "/login";
+    });
+
     const toggleNavbar = () => {
+      sidebarOpen.value = false;
       navbarOpen.value = !navbarOpen.value;
     };
 
-    const startTouch = (event) => {
-      startX.value = event.touches[0].clientX;
-    };
-
-    const endTouch = (event) => {
-      const endX = event.changedTouches[0].clientX;
-      if (endX - startX.value > 100) {
-        sidebarOpen.value = true;
-      } else if (startX.value - endX > 100) {
-        sidebarOpen.value = false;
-      }
-    };
+    const { startTouch, moveTouch, endTouch } = useSwipe({
+      onSwipeRight: () => {
+        if (shouldShowSidebar.value && !sidebarOpen.value) {
+          sidebarOpen.value = true;
+        }
+      },
+      onSwipeLeft: () => {
+        if (shouldShowSidebar.value && sidebarOpen.value) {
+          sidebarOpen.value = false;
+        }
+      },
+    });
 
     const navigateTo = (path) => {
       router.push(path);
       navbarOpen.value = false;
+      if (path !== "/stats-diversity") {
+        sidebarOpen.value = false;
+      }
+    };
+
+    const isActiveRoute = (path) => {
+      return route.path === path;
     };
 
     const handleResize = debounce(() => {
-      windowWidth.value = window.innerWidth;
       if (isDesktop.value) {
         navbarOpen.value = false;
+        sidebarOpen.value = false;
       }
     }, 100);
 
-    const updateFilters = (newFilters) => {
-      filters.value = newFilters;
+    const resetSidebarFilters = () => {
+      sidebarKey.value += 1;
+      if (sidebarRef.value) {
+        sidebarRef.value.resetFilters();
+      }
+    };
+
+    const handleApplyFilters = (appliedFilters) => {
+      filters.value = { ...filters.value, ...appliedFilters };
+      if (statsDiversityRef.value && statsDiversityRef.value.fetchAndDisplayData) {
+        nextTick(() => {
+          statsDiversityRef.value.fetchAndDisplayData();
+        });
+      }
+    };
+
+    const logout = () => {
+      localStorage.removeItem("user");
+      isLoggedIn.value = false;
+      router.push("/login");
+    };
+
+    const checkLoginStatus = () => {
+      isLoggedIn.value = !!localStorage.getItem("user");
     };
 
     onMounted(() => {
       window.addEventListener("resize", handleResize);
+      checkLoginStatus();
+      window.addEventListener("storage", checkLoginStatus);
     });
 
     onBeforeUnmount(() => {
       window.removeEventListener("resize", handleResize);
+      window.removeEventListener("storage", checkLoginStatus);
+    });
+
+    watch(route, () => {
+      if (shouldShowSidebar.value) {
+        resetSidebarFilters();
+      } else {
+        sidebarOpen.value = false;
+      }
+      checkLoginStatus();
     });
 
     return {
@@ -129,11 +193,19 @@ export default {
       navLinks,
       toggleNavbar,
       startTouch,
+      moveTouch,
       endTouch,
       navigateTo,
+      isActiveRoute,
       shouldShowSidebar,
       filters,
-      updateFilters,
+      loggedIn: isLoggedIn,
+      logout,
+      statsDiversityRef,
+      handleApplyFilters,
+      sidebarRef,
+      sidebarKey,
+      showNavbar,
     };
   },
 };
@@ -144,7 +216,7 @@ export default {
 body,
 .v-application,
 main {
-  background-color: #f5f5f5; /* Couleur de fond légèrement plus claire */
+  background-color: #f5f5f5;
   color: #2c3e50;
   font-family: "Arial", sans-serif;
   overflow-x: hidden;
@@ -152,37 +224,64 @@ main {
 
 /* Barre de navigation */
 .v-app-bar {
+  background-color: #1976d2 !important; /* Retour au bleu */
+  padding: 0 30px;
+}
+
+.sticky-navbar {
   position: fixed;
   top: 0;
   left: 0;
   width: 100%;
   z-index: 1000;
-  background-color: #a26769; /* Changement de la couleur de fond à #A26769 */
-  padding: 10px 30px;
-  box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.1);
 }
 
-.sticky-navbar {
-  z-index: 100;
+/* Menu déroulant */
+.nav-dropdown {
+  position: fixed;
+  top: 64px;
+  left: 0;
+  width: 100%;
+  height: calc(100vh - 64px);
+  background-color: rgba(25, 118, 210, 0.95); /* Bleu avec transparence */
+  z-index: 999;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
 }
 
-/* Sidebar desktop */
+.nav-btn-dropdown {
+  width: 80%;
+  max-width: 300px;
+  margin-bottom: 10px;
+  color: #ffffff !important;
+  font-size: 1.2rem;
+  text-transform: none;
+  letter-spacing: normal;
+}
+
+.nav-btn-dropdown:hover {
+  background-color: rgba(255, 255, 255, 0.2);
+}
+
+/* Sidebar */
 .sidebar-desktop {
   position: fixed;
   top: 64px;
   bottom: 0;
-  left: 0;
+  left: -250px;
   width: 250px;
   background-color: #ffffff;
   padding: 20px;
-  box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1); /* Ombre plus douce */
-  border-right: 1px solid #e0e0e0; /* Légère bordure pour séparer visuellement */
+  box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+  border-right: 1px solid #e0e0e0;
+  transition: transform 0.3s ease-in-out;
+  z-index: 98;
 }
 
-/* Sidebar mobile */
-.mobile-sidebar {
-  z-index: 90;
-  background-color: #ffffff;
+.sidebar-open {
+  transform: translateX(250px);
 }
 
 /* Conteneur principal */
@@ -190,9 +289,10 @@ main {
   display: flex;
   flex-grow: 1;
   margin-top: 64px;
-  padding: 30px; /* Plus d'espace pour aérer le contenu */
+  padding: 30px;
   box-sizing: border-box;
   overflow: auto;
+  transition: margin-left 0.3s ease-in-out;
 }
 
 .with-sidebar {
@@ -201,127 +301,67 @@ main {
 
 .without-sidebar {
   margin-left: 0;
-  padding: 30px 50px; /* Confort visuel accru pour les pages sans sidebar */
-}
-
-/* Conteneur de contenu */
-.content-container {
-  flex-grow: 1;
-  overflow-y: auto;
-  background-color: #ffffff; /* Couleur de fond blanche pour un look épuré */
-  border-radius: 8px; /* Coins arrondis pour un look moderne */
-  box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.05); /* Légère ombre pour un effet flottant */
-  padding: 20px;
+  padding: 30px 50px;
 }
 
 /* Boutons de navigation */
 .nav-btn {
-  transition: transform 0.2s, background-color 0.2s, color 0.2s;
-  color: #ffffff;
+  color: #ffffff !important;
   font-weight: 600;
-  padding: 10px 20px;
-  background: linear-gradient(45deg, #a26769, #6d2e46); /* Dégradé avec les couleurs de la charte graphique */
+  padding: 5px 15px;
+  background: linear-gradient(45deg, #1976d2, #1565c0); /* Dégradé de bleu */
+  min-width: 0;
+  transition: transform 0.2s, background-color 0.2s;
+  right: 15px;
 }
 
-.nav-btn:hover {
-  transform: scale(1.1); /* Légère augmentation de taille au survol */
-  background-color: #6d2e46; /* Couleur plus foncée de la charte pour le survol */
-  color: #ffffff;
+.nav-btn:hover,
+.nav-btn.active-link {
+  transform: scale(1.05);
+  background-color: #1565c0;
 }
 
 .nav-btn-spacing {
-  margin-right: 15px; /* Plus d'espace entre les boutons */
-}
-
-.nav-btn-spacing:last-child {
-  margin-right: 0;
-}
-
-/* Menu déroulant (burger menu) */
-.nav-dropdown {
-  position: absolute;
-  top: 75px; /* Descend légèrement le menu déroulant pour éviter qu'il soit trop proche de la barre de navigation */
-  width: 100%;
-  background-color: #a26769; /* Couleur de fond du menu burger */
-  z-index: 99;
-  flex-direction: column;
-  padding: 20px 0px; /* Augmentation du padding pour aérer davantage le menu */
-  box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.2); /* Ombre douce pour un effet flottant */
-}
-
-.nav-btn-dropdown {
-  color: #e1d7cd; /* Couleur de texte claire pour le contraste */
-  font-weight: 600;
-  padding: 15px 25px; /* Augmentation du padding pour agrandir les boutons */
-  margin-bottom: 15px; /* Espace supplémentaire entre les boutons */
-  border-bottom: 1px solid rgba(255, 255, 255, 0.2); /* Bordure subtile entre les éléments */
-  width: 100%;
-  text-align: center;
-  background-color: transparent; /* Fond transparent pour un effet plus léger */
-  transition: background-color 0.3s ease, transform 0.3s ease; /* Transition pour les effets de hover */
-}
-
-.nav-btn-dropdown:hover {
-  background-color: rgba(25, 118, 210, 0.8); /* Bleu plus clair de la charte au survol */
-  transform: scale(1.05); /* Légère augmentation de la taille au survol */
-}
-
-.nav-btn-dropdown:last-child {
-  margin-bottom: 0; /* Pas de marge après le dernier élément */
-}
-
-.nav-buttons-desktop .v-btn:last-child {
-  margin-right: 25px; /* Ajustez cette valeur selon les besoins */
-}
-
-/* Boutons généraux */
-.v-btn {
-  background: linear-gradient(45deg, #1976d2, #0b4678); /* Dégradé utilisant les couleurs de la charte */
-  box-shadow: 0px 4px 15px rgba(0, 0, 0, 0.15); /* Ombre douce */
-  color: #e1d7cd; /* Texte clair pour le contraste */
-  font-weight: 600;
-}
-
-/* Effet de parallaxe */
-.abstract-bg {
-  background-attachment: fixed;
-  background-size: cover;
-}
-
-/* Animations */
-.slide-left-enter-active,
-.slide-left-leave-active {
-  transition: transform 0.3s ease;
-}
-
-.slide-left-enter,
-.slide-left-leave-to {
-  transform: translateX(-100%);
-}
-
-.fade-enter-active,
-.fade-leave-active {
-  transition: opacity 0.5s;
-}
-
-.fade-enter,
-.fade-leave-to {
-  opacity: 0;
+  margin-right: 10px;
 }
 
 /* Responsivité */
-@media (max-width: 1280px) {
+@media (max-width: 1420px) {
   .v-main {
     margin-left: 0;
     padding: 20px;
   }
 
+  .sidebar-desktop {
+    transform: translateX(-250px);
+  }
+
+  .with-sidebar .sidebar-desktop {
+    transform: translateX(0);
+  }
+}
+
+@media (max-width: 1280px) {
   .nav-buttons-desktop {
     display: none;
   }
 }
 
-@media (min-width: 1281px) {
+@media (min-width: 1281px) and (max-width: 1420px) {
+  .nav-buttons-desktop {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+
+  .nav-btn {
+    font-size: 0.9rem;
+    padding: 4px 8px;
+    margin-bottom: 4px;
+  }
+}
+
+@media (min-width: 1421px) {
   .nav-dropdown {
     display: none;
   }

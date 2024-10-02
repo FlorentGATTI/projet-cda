@@ -1,13 +1,23 @@
 <template>
-  <v-container fluid>
-    <h2>Diversité Géographique</h2>
-    <div id="map" class="map-container"></div>
-  </v-container>
+  <div class="stats-diversity-container">
+    <div ref="mapContainer" class="map-container"></div>
+    <div v-if="!filtersApplied" class="map-overlay">
+      <p>Veuillez appliquer les filtres pour afficher les données sur la carte.</p>
+    </div>
+    <div v-if="noDataFound" class="map-overlay">
+      <p>Aucune donnée trouvée pour les filtres sélectionnés.</p>
+    </div>
+    <div v-if="loading" class="map-overlay">
+      <v-progress-circular indeterminate color="primary"></v-progress-circular>
+    </div>
+  </div>
 </template>
 
 <script>
+import { ref, onMounted, watch, nextTick } from "vue";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
+import { getStateCoordinates, getTerritoryCoordinates } from "../../../data/stateTerritoryMappings";
 
 export default {
   name: "StatsDiversity",
@@ -17,217 +27,225 @@ export default {
       required: true,
     },
   },
-  data() {
-    return {
-      map: null,
-      usaBounds: [
-        [24.396308, -125.0], // Sud-ouest
-        [49.384358, -66.93457], // Nord-est
-      ],
-    };
-  },
-  watch: {
-    filters: {
-      handler() {
-        this.applyFilters();
-      },
-      deep: true,
-    },
-  },
-  mounted() {
-    console.log("Montage de la carte");
-    this.map = L.map("map", {
-      maxBounds: this.usaBounds, // Appliquer les limites de la carte
-      maxBoundsViscosity: 1.0, // Rendre les limites plus strictes
-      minZoom: 4,
-      maxZoom: 10, // Limite de zoom
-    }).setView([39.8283, -98.5795], 4);
+  setup(props) {
+    const mapContainer = ref(null);
+    const map = ref(null);
+    const filtersApplied = ref(false);
+    const noDataFound = ref(false);
+    const loading = ref(false);
+    let currentMarker = null;
 
-    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-      maxZoom: 18,
-      attribution: "© OpenStreetMap contributors",
-    }).addTo(this.map);
+    const initializeMap = () => {
+      if (map.value) {
+        map.value.remove();
+        map.value = null;
+      }
 
-    this.applyFilters(); // Charger les données initiales
-  },
-  methods: {
-    async applyFilters() {
-      console.log("Application des filtres avec :", this.filters);
+      if (!mapContainer.value) return;
 
-      // Vider la carte avant d'ajouter les nouvelles données
-      this.map.eachLayer((layer) => {
-        if (layer instanceof L.CircleMarker) {
-          this.map.removeLayer(layer);
-          console.log("Marqueur retiré :", layer);
-        }
+      map.value = L.map(mapContainer.value, {
+        center: [37.8, -96],
+        zoom: 4,
+        zoomControl: false,
+        dragging: false,
+        touchZoom: false,
+        doubleClickZoom: false,
+        scrollWheelZoom: false,
+        boxZoom: false,
+        keyboard: false,
       });
 
-      await this.loadStateData();
-      await this.loadTerritoryData();
-    },
-    async loadStateData() {
-      try {
-        console.log("Chargement des données des États avec filtres :", this.filters);
-        const queryParams = new URLSearchParams(this.filters);
-        const response = await fetch(`/api/names_by_state?${queryParams}`);
-        console.log("Réponse de l'API des États :", response);
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+      }).addTo(map.value);
+    };
 
-        if (!response.ok) {
-          throw new Error(`Erreur HTTP: ${response.status}`);
+    const clearMapLayers = () => {
+      if (!map.value) return;
+      map.value.eachLayer((layer) => {
+        if (layer instanceof L.Marker) {
+          map.value.removeLayer(layer);
         }
+      });
+      currentMarker = null;
+    };
 
-        const stateData = await response.json();
-        console.log("Données des États reçues :", stateData);
+    const createCustomIcon = () => {
+      return L.divIcon({
+        className: "custom-div-icon",
+        html: "<div style='background-color:#6D2E46; width: 12px; height: 12px; border-radius: 50%;'></div>",
+        iconSize: [12, 12],
+        iconAnchor: [6, 6],
+      });
+    };
 
-        if (!Array.isArray(stateData) || stateData.length === 0) {
-          console.error("Pas de données trouvées pour les États");
-          return;
-        }
+    const createPopupContent = (item) => {
+      return `
+        <div class="custom-popup">
+          <h3>${props.filters.fullName}</h3>
+          <p><strong>Prénom:</strong> ${item.Name}</p>
+          <p><strong>Sexe:</strong> ${item.Sex === "M" ? "Masculin" : "Féminin"}</p>
+          <p><strong>Année:</strong> ${item.Year}</p>
+          <p><strong>Nombre de naissances:</strong> ${item.Count}</p>
+        </div>
+      `;
+    };
 
-        stateData.forEach((record) => {
-          const coordinates = this.getCoordinatesForState(record.State);
-          if (coordinates) {
-            console.log(`Ajout du marqueur pour ${record.Name} à ${coordinates}`);
-            const marker = L.circleMarker(coordinates, {
-              radius: 8,
-              fillColor: "#1976D2",
-              color: "#1976D2",
-              weight: 1,
-              opacity: 1,
-              fillOpacity: 0.8,
-            }).addTo(this.map);
+    const displayFilteredDataOnMap = (data) => {
+      clearMapLayers();
+      noDataFound.value = false;
 
-            marker.bindPopup(`<strong>${record.Name}</strong><br>${record.Count} occurrences in ${record.Year}<br>State: ${record.State}`);
-          } else {
-            console.warn(`Pas de coordonnées trouvées pour l'état: ${record.State}`);
+      if (data.length > 0) {
+        const item = data[0];
+        const coordinates = props.filters.selectedType === "state" ? getStateCoordinates(item.State) : getTerritoryCoordinates(item.Territory);
+
+        if (coordinates) {
+          if (map.value) {
+            map.value.setView(coordinates, 6, { animate: true, duration: 1 });
+
+            const customIcon = createCustomIcon();
+            currentMarker = L.marker(coordinates, { icon: customIcon }).addTo(map.value);
+
+            const popupContent = createPopupContent(item);
+            currentMarker.bindPopup(popupContent).openPopup();
+
+            nextTick(() => {
+              map.value.invalidateSize();
+            });
           }
-        });
-      } catch (error) {
-        console.error("Erreur lors du chargement des données des États :", error);
-      }
-    },
-    async loadTerritoryData() {
-      try {
-        console.log("Chargement des données des Territoires avec filtres :", this.filters);
-        const queryParams = new URLSearchParams(this.filters);
-        const response = await fetch(`/api/names_by_territory?${queryParams}`);
-        console.log("Réponse de l'API des Territoires :", response);
-
-        if (!response.ok) {
-          throw new Error(`Erreur HTTP: ${response.status}`);
-        }
-
-        const territoryData = await response.json();
-        console.log("Données des Territoires reçues :", territoryData);
-
-        territoryData.forEach((record) => {
-          const coordinates = this.getCoordinatesForState(record.Territory);
-          if (coordinates) {
-            console.log(`Ajout du marqueur pour ${record.Name} à ${coordinates}`);
-            const marker = L.circleMarker(coordinates, {
-              radius: 8,
-              fillColor: "#1976D2",
-              color: "#1976D2",
-              weight: 1,
-              opacity: 1,
-              fillOpacity: 0.8,
-            }).addTo(this.map);
-
-            marker.bindPopup(`<strong>${record.Name}</strong><br>${record.Count} occurrences in ${record.Year}<br>Territory: ${record.Territory}`);
-          } else {
-            console.warn(`Pas de coordonnées trouvées pour le territoire: ${record.Territory}`);
-          }
-        });
-
-        const bounds = L.latLngBounds(territoryData.map((record) => this.getCoordinatesForState(record.Territory)).filter(Boolean));
-
-        if (bounds.isValid()) {
-          console.log("Ajustement des limites de la carte");
-          this.map.fitBounds(bounds);
         } else {
-          console.error("Impossible d'ajuster les limites de la carte : Les limites ne sont pas valides.");
+          console.error("Coordonnées non trouvées pour:", props.filters.selectedValue);
+          noDataFound.value = true;
+        }
+      } else {
+        noDataFound.value = true;
+      }
+
+      filtersApplied.value = true;
+    };
+
+    const fetchAndDisplayData = async () => {
+      const { selectedType, selectedValue, year, sex, name } = props.filters;
+
+      if (!selectedType || !selectedValue || !year || !sex || !name) {
+        filtersApplied.value = false;
+        return;
+      }
+
+      loading.value = true;
+      try {
+        const response = await fetch(`http://localhost:8000/api/names_data?selected_type=${selectedType}&${selectedType}=${selectedValue}&year=${year}&sex=${sex}&name=${name}`);
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const data = await response.json();
+
+        if (Array.isArray(data) && data.length > 0) {
+          displayFilteredDataOnMap(data);
+        } else {
+          noDataFound.value = true;
+          filtersApplied.value = true;
         }
       } catch (error) {
-        console.error("Erreur lors du chargement des données des Territoires :", error);
+        console.error("Erreur lors de la récupération des données :", error);
+        noDataFound.value = true;
+        filtersApplied.value = true;
+      } finally {
+        loading.value = false;
       }
-    },
-    getCoordinatesForState(stateOrTerritory) {
-      const coordinates = {
-        AL: [-86.9023, 32.3182], // Alabama
-        AK: [-154.493062, 63.588753], // Alaska
-        AZ: [-111.093731, 34.048928], // Arizona
-        AR: [-92.199997, 34.746481], // Arkansas
-        CA: [-119.417931, 36.778259], // California
-        CO: [-105.782067, 39.550051], // Colorado
-        CT: [-72.755371, 41.603221], // Connecticut
-        DE: [-75.52767, 38.910832], // Delaware
-        FL: [-81.515754, 27.664827], // Florida
-        GA: [-82.900075, 32.165622], // Georgia
-        HI: [-155.582782, 19.896766], // Hawaii
-        ID: [-114.742041, 44.068202], // Idaho
-        IL: [-89.398528, 40.633125], // Illinois
-        IN: [-86.134902, 40.267194], // Indiana
-        IA: [-93.097702, 41.878003], // Iowa
-        KS: [-98.484246, 39.011902], // Kansas
-        KY: [-84.270018, 37.839333], // Kentucky
-        LA: [-92.145024, 30.984298], // Louisiana
-        ME: [-69.445469, 45.253783], // Maine
-        MD: [-76.641271, 39.045755], // Maryland
-        MA: [-71.382437, 42.407211], // Massachusetts
-        MI: [-85.602364, 44.314844], // Michigan
-        MN: [-94.6859, 46.729553], // Minnesota
-        MS: [-89.398528, 32.354668], // Mississippi
-        MO: [-91.831833, 37.964253], // Missouri
-        MT: [-110.362566, 46.879682], // Montana
-        NE: [-99.901813, 41.492537], // Nebraska
-        NV: [-116.419389, 38.80261], // Nevada
-        NH: [-71.572395, 43.193852], // New Hampshire
-        NJ: [-74.405661, 40.058324], // New Jersey
-        NM: [-105.032363, 34.97273], // New Mexico
-        NY: [-74.005973, 40.712776], // New York
-        NC: [-79.0193, 35.759573], // North Carolina
-        ND: [-101.002012, 47.551493], // North Dakota
-        OH: [-82.907123, 40.417287], // Ohio
-        OK: [-97.516428, 35.007752], // Oklahoma
-        OR: [-120.554201, 43.804133], // Oregon
-        PA: [-77.194525, 41.203322], // Pennsylvania
-        RI: [-71.477429, 41.580095], // Rhode Island
-        SC: [-81.163725, 33.836081], // South Carolina
-        SD: [-99.901813, 43.969515], // South Dakota
-        TN: [-86.580447, 35.517491], // Tennessee
-        TX: [-99.901813, 31.968599], // Texas
-        UT: [-111.093731, 39.32098], // Utah
-        VT: [-72.577841, 44.558803], // Vermont
-        VA: [-78.656894, 37.431573], // Virginia
-        WA: [-120.740138, 47.751074], // Washington
-        WV: [-80.454903, 38.597626], // West Virginia
-        WI: [-89.398528, 43.78444], // Wisconsin
-        WY: [-107.290284, 43.075968], // Wyoming
-        DC: [-77.036871, 38.907192], // Washington D.C.
-        AS: [-170.132217, -14.271], // American Samoa
-        GU: [144.793731, 13.444304], // Guam
-        MP: [145.750967, 15.0979], // Northern Mariana Islands
-        PR: [-66.590149, 18.220833], // Puerto Rico
-        VI: [-64.896335, 18.335765], // U.S. Virgin Islands
-        UM: [166.614013, 19.282319], // U.S. Minor Outlying Islands
-        PI: [125.9668, 8.4606], // Philippines (ancienne région sous US)
-      };
+    };
 
-      console.log(`Coordonnées pour ${stateOrTerritory} :`, coordinates[stateOrTerritory]);
-      return coordinates[stateOrTerritory] || null;
-    },
+    onMounted(() => {
+      initializeMap();
+    });
+
+    watch(
+      () => props.filters,
+      (newFilters, oldFilters) => {
+        if (JSON.stringify(newFilters) !== JSON.stringify(oldFilters)) {
+          nextTick(() => {
+            initializeMap();
+            fetchAndDisplayData();
+          });
+        }
+      },
+      { deep: true }
+    );
+
+    return {
+      mapContainer,
+      filtersApplied,
+      noDataFound,
+      loading,
+      fetchAndDisplayData,
+    };
   },
 };
 </script>
 
 <style scoped>
-.map-container {
-  height: 100%;
-  width: 100%;
+.stats-diversity-container {
   position: absolute;
   top: 0;
-  bottom: 0;
-  right: 0;
   left: 0;
+  right: 0;
+  bottom: 0;
+  overflow: hidden;
+}
+
+.map-container {
+  width: 100%;
+  height: 100%;
+}
+
+.map-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(255, 255, 255, 0.7);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 500;
+}
+
+.map-overlay p {
+  background-color: white;
+  padding: 20px;
+  border-radius: 5px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+:deep(.custom-div-icon) {
+  background: none;
+  border: none;
+}
+
+:deep(.leaflet-popup-content-wrapper) {
+  background: rgba(255, 255, 255, 0.8);
+  border-radius: 10px;
+  box-shadow: 0 3px 14px rgba(0, 0, 0, 0.4);
+}
+
+:deep(.leaflet-popup-content) {
+  margin: 13px 19px;
+  line-height: 1.4;
+}
+
+:deep(.custom-popup h3) {
+  margin: 0 0 10px 0;
+  color: #333;
+  font-size: 18px;
+}
+
+:deep(.custom-popup p) {
+  margin: 0 0 5px 0;
+  color: #666;
+}
+
+:deep(.custom-popup strong) {
+  color: #333;
 }
 </style>

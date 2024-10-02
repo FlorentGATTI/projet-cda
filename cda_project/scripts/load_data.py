@@ -20,6 +20,9 @@ def load_names_data(data_dir):
     start_time = time.time()
     
     all_files = os.listdir(data_dir)
+    # Ajout de la vérification isinstance(f, str)
+    data_files = [f for f in all_files if isinstance(f, str) and f.startswith('yob') and f.endswith('.txt')]
+    
     data_files = [f for f in all_files if f.startswith('yob') and f.endswith('.txt')]
     if not data_files:
         raise ValueError("No name data files found in the directory.")
@@ -39,6 +42,19 @@ def load_names_data(data_dir):
     logging.info(f"Loading names data took {time.time() - start_time:.2f} seconds")
     return data
 
+def insert_data_to_mongodb(data):
+    client = MongoClient("mongodb://localhost:27017")
+    db = client["cda"]
+    collection = db["prenoms"]
+
+    data_dict = data.to_dict("records")
+    collection.insert_many(data_dict)
+    client.close()
+
+if __name__ == "__main__":
+    data = load_data()
+    insert_data_to_mongodb(data)
+    print("Data has been successfully imported into MongoDB.")
 def load_names_by_state_data(data_dir):
     start_time = time.time()
     

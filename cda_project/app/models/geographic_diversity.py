@@ -3,14 +3,14 @@ from typing import Optional
 
 class NameDataByState(BaseModel):
     State: str
-    Sex: str
     Year: int
+    Sex: str
     Name: str
     Count: int
 
 class NameDataByTerritory(BaseModel):
     Territory: str
-    Sex: str
     Year: int
+    Sex: str
     Name: str
     Count: int
