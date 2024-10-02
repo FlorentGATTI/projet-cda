@@ -1,9 +1,7 @@
 <template>
   <v-container fluid>
     <h1 class="text-center main-title">Statistiques Globales</h1>
-
-    <v-select v-model="selectedYear" :items="years" label="Sélectionnez l'année" solo hide-details class="year-select" placeholder="Recherchez ou sélectionnez une année" searchable></v-select>
-
+    
     <div class="buttons">
       <button @click="fetchDiversity" class="secondary-button">Générer un graphique de diversité</button>
       <button @click="fetchNameLength" class="secondary-button">Générer un tracé de longueur de nom</button>
@@ -168,22 +166,6 @@ export default {
   flex-wrap: wrap;
   justify-content: center;
   gap: 10px;
-}
-
-.secondary-button {
-  background-color: #6d2e46;
-  color: white;
-  border: none;
-  padding: 10px 15px;
-  margin: 5px;
-  cursor: pointer;
-  font-size: 0.9em;
-  border-radius: 5px;
-  transition: background-color 0.3s ease;
-}
-
-.secondary-button:hover {
-  background-color: #a26769;
 }
 
 .error-message {

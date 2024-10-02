@@ -215,7 +215,6 @@ main {
 }
 
 .v-app-bar {
-  background-color: #1976d2 !important;
   padding: 0 30px;
 }
 
@@ -227,28 +226,35 @@ main {
   z-index: 1000;
 }
 
+.mdi-menu::before,
+.mdi-logout::before {
+  color: transparent;
+  background: linear-gradient(0deg, #0098f0, #00f2c3);
+  background-clip: text;
+}
+
 .nav-dropdown {
-  position: fixed;
-  top: 64px;
-  left: 0;
+  position: absolute;
+  top: 55px;
+  right: 0;
   width: 100%;
-  height: calc(100vh - 64px);
-  background-color: rgba(25, 118, 210, 0.95);
-  z-index: 999;
-  display: flex;
+  z-index: 99;
   flex-direction: column;
-  justify-content: center;
-  align-items: center;
+  padding-top: 20px;
+  backdrop-filter: blur(40px);
+  box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.2);
 }
 
 .nav-btn-dropdown {
   width: 80%;
   max-width: 300px;
   margin-bottom: 10px;
-  color: #ffffff !important;
+  color: transparent;
   font-size: 1.2rem;
   text-transform: none;
   letter-spacing: normal;
+  background-color: transparent;
+  
 }
 
 .nav-btn-dropdown:hover {
@@ -301,21 +307,16 @@ main {
 
 .nav-btn {
   transition: transform 0.2s, background-color 0.2s, color 0.2s;
-  color: #ffffff !important;
-  font-weight: 600;
-  padding: 5px 15px;
-  background: linear-gradient(45deg, #1976d2, #1565c0);
-  min-width: 0;
+  color: transparent;
 }
 
 .nav-btn:hover,
 .nav-btn.active-link {
-  transform: scale(1.05);
-  background-color: #1565c0;
+  transform: scale(1.1);
 }
 
 .nav-btn-spacing {
-  margin-right: 10px;
+  margin-right: 15px;
 }
 
 .nav-buttons-desktop .v-btn:last-child {
@@ -371,7 +372,6 @@ main {
   .nav-btn {
     font-size: 0.9rem;
     padding: 4px 8px;
-    margin-bottom: 4px;
   }
 }
 

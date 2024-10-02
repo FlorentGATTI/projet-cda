@@ -336,6 +336,10 @@ export default {
   text-transform: none;
 }
 
+button:hover, .v-btn:hover {
+    background-color: #9c9c9c;
+}
+
 .v-list-item {
   transition: all 0.3s ease;
 }
@@ -422,7 +426,7 @@ export default {
 }
 
 button:hover, .v-btn:hover {
-    background-color: #9c9c9c;
+    background-color: # ;
 }
 
 :deep(.v-field),
