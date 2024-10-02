@@ -1,5 +1,7 @@
 import logging
 from pymongo import MongoClient
+from functools import lru_cache
+import pandas as pd
 from dotenv import load_dotenv
 import os
 
@@ -51,4 +53,20 @@ def startup_db_client():
     mongodb_client.connect()
 
 def shutdown_db_client():
+    mongodb_client.disconnect()
+
+@lru_cache(maxsize=1)
+def get_cached_data():
+    if mongodb_client.db is None:
+        return None
+    data = pd.DataFrame(list(mongodb_client.db["prenoms"].find({}, {'_id': 0})))
+    return data
+
+@lru_cache(maxsize=1)
+def get_cached_pivot_table():
+    data = get_cached_data()
+    if data is None:
+        return None
+    from scripts.analysis import create_pivot_table
+    return create_pivot_table(data)
     mongodb_client.disconnect()
