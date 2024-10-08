@@ -40,9 +40,6 @@ def analyze_name_length(data):
     fig.show()
 
 def main():
-    # Fonction principale pour exécuter les différentes analyses
-
-    # Chargement des données
     data = load_data()
 
     # Création du tableau pivot par prénom et année
@@ -62,5 +59,4 @@ def main():
     analyze_name_length(data)
 
 if __name__ == "__main__":
-    # Exécution de la fonction principale si le script est exécuté directement
     main()

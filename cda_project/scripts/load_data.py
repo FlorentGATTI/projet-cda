@@ -5,7 +5,6 @@ from pymongo import MongoClient
 import time
 import logging
 
-# Configuration de la journalisation
 logging.basicConfig(level=logging.INFO)
 
 def extract_zip_if_needed(zip_file, extract_to):
@@ -50,7 +49,7 @@ def load_names_by_state_data(data_dir):
     
     data_list = []
     for file in state_files:
-        if file.endswith('.txt'):  # Only process .txt files
+        if file.endswith('.txt'):
             file_path = os.path.join(data_dir, file)
             df = pd.read_csv(file_path, names=['State', 'Sex', 'Year', 'Name', 'Count'])
             data_list.append(df)
@@ -91,7 +90,6 @@ def insert_data_to_mongodb(data, collection_name):
     db = client["cda"]
     collection = db[collection_name]
 
-    # Utilisation de l'insertion en masse
     data_dict = data.to_dict("records")
     collection.insert_many(data_dict, ordered=False)
     
@@ -99,11 +97,9 @@ def insert_data_to_mongodb(data, collection_name):
     logging.info(f"Inserting data into MongoDB collection {collection_name} took {time.time() - start_time:.2f} seconds")
 
 def main():
-    # Définir le chemin absolu pour le répertoire des données
     script_dir = os.path.dirname(__file__)
     data_dir = os.path.join(script_dir, '..', 'data')
 
-    # Extraire les datasets si nécessaire
     extract_zip_if_needed(os.path.join(data_dir, "names.zip"), data_dir)
     extract_zip_if_needed(os.path.join(data_dir, "namesbystate.zip"), os.path.join(data_dir, "namesbystates"))
     extract_zip_if_needed(os.path.join(data_dir, "namesbyterritory.zip"), os.path.join(data_dir, "namesbyterritory"))

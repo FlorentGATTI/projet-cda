@@ -17,7 +17,7 @@
 
 <script>
 import Plotly from "plotly.js-dist";
-import _ from "lodash";  // Pour utiliser la fonction debounce
+import _ from "lodash";
 
 const cachedData = {};
 
@@ -34,7 +34,7 @@ export default {
     };
   },
   mounted() {
-    this.fetchAvailableNames();  // Appeler ici pour charger les noms après que le composant soit monté
+    this.fetchAvailableNames();
   },
   methods: {
     async fetchAvailableNames() {
@@ -45,7 +45,7 @@ export default {
         }
         const data = await response.json();
         this.availableNames = data;
-        this.filteredNames = data; // Initialiser filteredNames pour le second v-select
+        this.filteredNames = data;
       } catch (error) {
         console.error("Erreur lors de la récupération des prénoms disponibles:", error);
         this.errorMessage = "Impossible de charger les prénoms disponibles.";
@@ -70,7 +70,7 @@ export default {
       } finally {
         this.loadingNames = false;
       }
-    }, 300), // Retarde l'exécution de la recherche de 300 ms
+    }, 300),
 
     async fetchTrends() {
       this.errorMessage = "";

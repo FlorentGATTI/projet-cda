@@ -28,7 +28,6 @@ class Prenom(BaseModel):
         arbitrary_types_allowed = True
         json_encoders = {ObjectId: str}
 
-# Define NameData if it should be in this module
 class NameData(BaseModel):
     name: str
     count: int

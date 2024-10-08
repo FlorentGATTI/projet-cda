@@ -10,11 +10,9 @@ from datetime import datetime, timedelta
 from contextlib import asynccontextmanager
 import logging
 
-# Configuration du logger
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Configuration MongoDB
 async def connect_to_mongodb():
     try:
         client = AsyncIOMotorClient("mongodb://localhost:27017")
@@ -25,7 +23,6 @@ async def connect_to_mongodb():
         logger.error(f"Could not connect to MongoDB: {str(e)}")
         raise
 
-# Configurer le contexte pour le hachage des mots de passe
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 # Clé secrète pour les JWT
@@ -36,7 +33,6 @@ ACCESS_TOKEN_EXPIRE_MINUTES = 30
 # OAuth2PasswordBearer pour extraire le token des requêtes
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
 
-# Modèle de données pour l'utilisateur
 class User(BaseModel):
     username: str
     email: EmailStr
@@ -61,15 +57,12 @@ class Token(BaseModel):
 class TokenData(BaseModel):
     username: Optional[str] = None
 
-# Fonction pour hacher le mot de passe
 def hash_password(password: str) -> str:
     return pwd_context.hash(password)
 
-# Fonction pour vérifier le mot de passe
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     return pwd_context.verify(plain_password, hashed_password)
 
-# Fonction pour créer un token JWT
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
     to_encode = data.copy()
     if expires_delta:
@@ -106,17 +99,15 @@ async def lifespan(app: FastAPI):
     else:
         logger.info("Admin user already exists.")
     
-    yield  # Continue with the lifespan context
+    yield
 
 app = FastAPI(lifespan=lifespan)
 
-# Fonction pour obtenir un utilisateur par nom d'utilisateur
 async def get_user(username: str):
     user = await db.users.find_one({"username": username})
     if user:
         return UserInDB(**user)
 
-# Authentification et récupération de l'utilisateur actuel
 async def authenticate_user(username: str, password: str):
     user = await get_user(username)
     if not user:
@@ -125,7 +116,6 @@ async def authenticate_user(username: str, password: str):
         return False
     return user
 
-# Récupération de l'utilisateur courant à partir du token
 async def get_current_user(token: str = Depends(oauth2_scheme)):
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
@@ -145,7 +135,6 @@ async def get_current_user(token: str = Depends(oauth2_scheme)):
         raise credentials_exception
     return user
 
-# Route pour s'inscrire
 @app.post("/register")
 async def register(user: UserCreate):
     if user.password != user.confirm_password:
@@ -161,7 +150,6 @@ async def register(user: UserCreate):
     await db.users.insert_one(user_dict)
     return {"msg": "User created successfully"}
 
-# Route pour se connecter
 @app.post("/login", response_model=Token)
 async def login(form_data: OAuth2PasswordRequestForm = Depends()):
     user = await authenticate_user(form_data.username, form_data.password)
@@ -177,12 +165,10 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends()):
     )
     return {"access_token": access_token, "token_type": "bearer"}
 
-# Route protégée (exemple)
 @app.get("/users/me", response_model=User)
 async def read_users_me(current_user: User = Depends(get_current_user)):
     return current_user
 
-# Pour protéger les routes
 def get_current_active_user(current_user: User = Depends(get_current_user)):
     if current_user.disabled:
         raise HTTPException(status_code=400, detail="Inactive user")

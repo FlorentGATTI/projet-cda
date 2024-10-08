@@ -1,27 +1,22 @@
-/* Styles globaux pour l'application */
-
-/* Styles pour les titres */
 h1,
 h2,
 h3,
 h4,
 h5,
 h6 {
-  color: #fff; /* Couleur primaire pour les titres */
+  color: #fff;
   font-family: "Arial", sans-serif;
 }
 
-/* Styles pour les liens */
 a {
-  color: #1976d2; /* Couleur primaire */
+  color: #1976d2;
   text-decoration: none;
 }
 
 a:hover {
-  color: #6d2e46; /* Couleur d'accentuation */
+  color: #6d2e46;
 }
 
-/* Boutons standards */
 button,
 .v-btn {
   font-family: "Arial", sans-serif;
@@ -38,7 +33,7 @@ button,
 
 button:hover,
 .v-btn:hover {
-  background-color: #27293d; /* Couleur primaire foncée pour l'effet hover */
+  background-color: #27293d;
 }
 
 .secondary-button {
@@ -59,10 +54,9 @@ button:hover,
 }
 
 .secondary-button:hover {
-  transform: scale(1.1); /* Légère augmentation de taille au survol */
-  background: linear-gradient(0deg, #186d9f, #1e9880); /* Dark Pink */
+  transform: scale(1.1);
+  background: linear-gradient(0deg, #186d9f, #1e9880);
 }
-/* Styles pour les champs de formulaire */
 input,
 select {
     padding: 8px;
@@ -73,35 +67,31 @@ select {
     font-family: 'Arial', sans-serif;
 }
 
-/* Messages d'erreur */
 .error-message {
   color: red;
   font-weight: bold;
 }
 
-/* Navigation latérale (Sidebar) */
 .sidebar-container .v-navigation-drawer {
-  background: linear-gradient(#cdc1b5, #e1d7cd); /* Dégradé pour le fond de la sidebar */
+  background: linear-gradient(#cdc1b5, #e1d7cd);
   border-right: 0px solid #0b4678;
 }
 
 .sidebar-item-active .v-list-item-title {
-  color: #a26769; /* Couleur secondaire pour l'élément actif */
+  color: #a26769;
 }
 
-/* Titres des items de la sidebar */
 .v-list-item-title {
-  color: #0b4678; /* Bleu foncé */
+  color: #0b4678;
   font-weight: bold;
   font-size: 16px;
 }
 
 .v-list-item:hover .v-list-item-title,
 .v-list-item:focus .v-list-item-title {
-  color: #6d2e46; /* Accent */
+  color: #6d2e46;
 }
 
-/* Alignement et marges dans les sections */
 .section {
   margin: 20px 0;
   text-align: center;
@@ -112,7 +102,6 @@ select {
   font-size: 2.5em;
 }
 
-/* Amélioration de la mise en page */
 .container {
   max-width: 1200px;
   margin: 0 auto;
@@ -123,7 +112,6 @@ select {
   padding: 0;
 }
 
-/* Footer (pied de page) */
 footer {
   background-color: #0b4678;
   color: white;

@@ -9,7 +9,6 @@
 
               <v-text-field v-if="!isLogin" v-model="confirmPassword" label="Confirmer le mot de passe" :type="showPassword ? 'text' : 'password'" :append-icon="showPassword ? 'mdi-eye' : 'mdi-eye-off'" @click:append="showPassword = !showPassword" :rules="[rules.required, rules.matchPassword]" required> </v-text-field>
 
-              <!-- Section d'affichage des messages d'erreur -->
               <v-alert v-if="errorMessage" type="error" dismissible>{{ errorMessage }}</v-alert>
             </v-form>
           </v-card-text>

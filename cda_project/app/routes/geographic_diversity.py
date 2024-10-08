@@ -6,7 +6,6 @@ from app.models.geographic_diversity import NameDataByState, NameDataByTerritory
 
 router = APIRouter()
 
-# MongoDB connection
 client = MongoClient("mongodb://localhost:27017")
 db = client["cda"]
 
@@ -126,7 +125,7 @@ def get_names_data(
         return results
     except HTTPException as he:
         if he.status_code == 404:
-            return []  # Retourne une liste vide au lieu de lever une exception
+            return []
         raise he
     except Exception as e:
         logging.error(f"Error fetching names data: {e}")

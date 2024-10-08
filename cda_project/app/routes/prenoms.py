@@ -42,17 +42,15 @@ async def get_filtered_names(query: str = ""):
             raise HTTPException(status_code=500, detail="Database connection not established")
         
         logging.info(f"Fetching names from the database with query: {query}")
-        # Rechercher les prénoms correspondant à la requête, avec une limite de résultats
         all_names = mongodb_client.db["prenoms"].find({"Name": {"$regex": f"^{query}", "$options": "i"}}).limit(50)
         name_list = [name["Name"] for name in all_names]
         
         logging.info(f"Found {len(name_list)} names matching query: {query}")
-        return sorted(name_list)  # Retourne les noms triés par ordre alphabétique
+        return sorted(name_list)
     except Exception as e:
         logging.error(f"Error fetching names: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
-# Nouvelle route pour une plage d'années
 @router.get("/total_births_range", response_model=List[Dict[str, int]])
 def get_total_births_range(start_year: int, end_year: int):
     logging.info(f"Fetching total births between {start_year} and {end_year}")
@@ -65,7 +63,6 @@ def get_total_births_range(start_year: int, end_year: int):
         logging.error(f"Invalid year range: {start_year} > {end_year}")
         raise HTTPException(status_code=400, detail="Invalid year range")
     
-    # Requête MongoDB pour obtenir toutes les années dans la plage
     births_in_range = list(mongodb_client.db["prenoms"].aggregate([
         {"$match": {"Year": {"$gte": start_year, "$lte": end_year}}},
         {
@@ -76,14 +73,13 @@ def get_total_births_range(start_year: int, end_year: int):
                 "female_births": {"$sum": {"$cond": [{"$eq": ["$Sex", "F"]}, "$Count", 0]}}
             }
         },
-        {"$sort": {"_id": 1}}  # Tri par année
+        {"$sort": {"_id": 1}}
     ]))
 
     if not births_in_range:
         logging.warning(f"No data found between {start_year} and {end_year}")
         raise HTTPException(status_code=404, detail="No data found for the given range")
 
-    # Transformer les résultats en un format plus lisible
     result = [
         {
             "year": item["_id"],

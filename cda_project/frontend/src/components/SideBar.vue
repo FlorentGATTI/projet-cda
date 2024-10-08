@@ -392,13 +392,13 @@ button:hover, .v-btn:hover {
   min-height: 32px !important;
   padding-top: 0 !important;
   border: none !important;
-  font-size: 16px !important; /* Augmentation de la taille de la police */
-  text-align: center !important; /* Centrage du texte */
+  font-size: 16px !important;
+  text-align: center !important;
 }
 
 :deep(.v-select__selection) {
   margin-top: 0 !important;
-  font-size: 16px !important; /* Augmentation de la taille de la police */
+  font-size: 16px !important;
 }
 
 :deep(.v-field__input::before),

@@ -2,10 +2,8 @@ import pandas as pd
 from load_data import load_data
 
 def main():
-    # Chargement des données
     data = load_data()
 
-    # Exploration initiale
     year = 2000
     data_2000 = data[data['Year'] == year]
     births_by_sex = data_2000.groupby('Sex')['Count'].sum()

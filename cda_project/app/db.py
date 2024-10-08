@@ -20,18 +20,15 @@ class MongoDBClient:
     def connect(self):
         logging.info("Starting up MongoDB client...")
         try:
-            # Utiliser l'URL MongoDB à partir des variables d'environnement
             mongo_url = os.getenv("MONGODB_URL", "mongodb://localhost:27017")
             self.client = MongoClient(mongo_url)
             
-            # Vérifier la connexion
             self.client.admin.command('ping')
             
             logging.info(f"MongoClient initialized: {self.client}")
             self.db = self.client["cda"]
             collections = self.db.list_collection_names()
             logging.info(f"Connected to 'cda' database. Collections: {collections}")
-            # Assurez-vous d'appeler cette fonction au démarrage de votre application
         except Exception as e:
             logging.error(f"Failed to start MongoDB client: {e}")
             self.client = None

@@ -10,46 +10,38 @@ from app.routes import prenoms, data, plot, geographic_diversity
 from app.models.user import User, get_password_hash
 from app.routes.auth import auth_router
 
-# Configuration de la journalisation
 logging.basicConfig(level=logging.INFO)
 
 app = FastAPI(docs_url="/docs", redoc_url="/redoc")
 
-# Ajouter les middlewares
 add_cors_middleware(app)
 
-# Inclure les routers avec le préfixe /api
 app.include_router(prenoms.router, prefix="/api")
 app.include_router(data.router, prefix="/api")
 app.include_router(plot.router, prefix="/api")
 app.include_router(geographic_diversity.router, prefix="/api") 
-# Inclure le router d'authentification avec le préfixe /api
 app.include_router(auth_router, prefix="/api")
 
-# Utiliser un chemin absolu pour le répertoire statique
 static_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'static')
 app.mount("/static", StaticFiles(directory=static_dir), name="static")
 
 def create_admin_user():
     admin_user = mongodb_client.db["users"].find_one({"username": "admin"})
     if not admin_user:
-        hashed_password = get_password_hash("admin")  # Utilise un mot de passe fort pour la production
+        hashed_password = get_password_hash("admin")
         admin_user = User(username="admin", password_hash=hashed_password, role="admin")
         mongodb_client.db["users"].insert_one(admin_user.dict(by_alias=True))
         logging.info("Admin user created")
 
-# Route pour servir le fichier index.html de l'application Vue.js
 @app.get("/", response_class=HTMLResponse)
 async def read_index():
     with open(os.path.join(static_dir, "index.html")) as f:
         return HTMLResponse(content=f.read(), status_code=200)
 
-# Route racine actuelle
 @app.get("/api")
 def read_root():
     return {"message": "Bienvenue à l'API des prénoms des bébés aux États-Unis"}
 
-# Ajouter les événements de démarrage et d'arrêt de MongoDB
 @app.on_event("startup")
 async def on_startup():
     logging.info("Application startup: connecting to MongoDB")
@@ -60,10 +52,9 @@ async def on_startup():
         raise RuntimeError("Failed to establish MongoDB connection.")
     else:
         try:
-            # Vérifier que la connexion fonctionne en effectuant une opération simple
             mongodb_client.db.command("ping")
             logging.info("MongoDB connection successfully established and verified.")
-            create_admin_user()  # Appelle la fonction pour créer l'utilisateur admin
+            _admin_createuser()  # Appelle la fonction pour créer l'utilisateur admin
         except Exception as e:
             logging.error(f"MongoDB connection verification failed: {e}")
             raise RuntimeError("Failed to verify MongoDB connection.")

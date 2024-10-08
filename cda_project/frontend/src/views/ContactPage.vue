@@ -1,6 +1,5 @@
 <template>
     <v-container fluid class="about-container">
-      <!-- En-tête de la page -->
       <v-row class="text-center">
         <v-col>
           <h1 class="main-title">À Propos de Nous</h1>
@@ -10,7 +9,6 @@
         </v-col>
       </v-row>
   
-      <!-- Section de présentation de l'équipe -->
       <v-row class="team-section">
         <v-col cols="12" md="10" class="mx-auto">
           <h2>Notre Équipe</h2>
@@ -27,7 +25,6 @@
         </v-col>
       </v-row>
   
-      <!-- Section de formulaire de contact -->
       <v-row class="contact-section">
         <v-col cols="12" md="8" class="mx-auto">
           <h2>Contactez-Nous</h2>
@@ -94,7 +91,6 @@
     },
     methods: {
       submitForm() {
-        // Logic for submitting the contact form
         console.log('Form Submitted:', this.contactForm);
       }
     }
